@@ -266,25 +266,50 @@ class ApiProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> updateReminderStatus(String id, String status) async {
+  Future<bool> updateReminderSettings(String id, bool isCompleted, String status) async {
     await _initFuture;
+    
+    // Optimistic UI update
+    final index = reminders.indexWhere((r) => r['id'].toString() == id);
+    bool previousCompleted = false;
+    String previousStatus = 'pending';
+    
+    if (index != -1) {
+      previousCompleted = reminders[index]['is_completed'] ?? false;
+      previousStatus = reminders[index]['status'] ?? 'pending';
+      
+      reminders[index]['is_completed'] = isCompleted;
+      reminders[index]['status'] = status;
+      notifyListeners();
+    }
+    
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/reminders/$id'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'status': status}),
+        body: json.encode({
+          'is_completed': isCompleted,
+          'status': status
+        }),
       );
       if (response.statusCode == 200) {
-        // Optimistically update local state instead of re-fetching immediately
-        final index = reminders.indexWhere((r) => r['id'] == id);
+        return true;
+      } else {
+        // Revert on failure
         if (index != -1) {
-          reminders[index]['status'] = status;
+          reminders[index]['is_completed'] = previousCompleted;
+          reminders[index]['status'] = previousStatus;
           notifyListeners();
         }
-        return true;
+        return false;
       }
-      return false;
     } catch (e) {
+      // Revert on failure
+      if (index != -1) {
+        reminders[index]['is_completed'] = previousCompleted;
+        reminders[index]['status'] = previousStatus;
+        notifyListeners();
+      }
       return false;
     }
   }
