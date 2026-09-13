@@ -65,12 +65,20 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 ? [
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.redAccent),
-                      onPressed: () {
+                      onPressed: () async {
                         final api = Provider.of<ApiProvider>(context, listen: false);
-                        api.deleteMultipleMemories(_selectedMemoryIds.toList());
+                        final count = _selectedMemoryIds.length;
+                        final success = await api.deleteMultipleMemories(_selectedMemoryIds.toList());
                         setState(() {
                           _selectedMemoryIds.clear();
                         });
+                        if (context.mounted) {
+                          if (success) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted $count memories successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete memories.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+                          }
+                        }
                       },
                     ),
                   ]
@@ -441,9 +449,16 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                       ),
                       if (!_isSelectionMode)
                         PopupMenuButton<String>(
-                          onSelected: (val) {
+                          onSelected: (val) async {
                             if (val == 'delete') {
-                              api.deleteMemory(memoryId);
+                              final success = await api.deleteMemory(memoryId);
+                              if (context.mounted) {
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Memory deleted.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete memory.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+                                }
+                              }
                             } else if (val == 'edit') {
                               _showEditDialog(context, memory, api);
                             }
@@ -475,7 +490,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     final TextEditingController editController = TextEditingController(text: memory['raw_text']);
     showDialog(
       context: context,
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text('Edit Memory'),
           content: TextField(
@@ -487,16 +502,23 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 final newText = editController.text.trim();
+                Navigator.pop(dialogContext);
                 if (newText.isNotEmpty && newText != memory['raw_text']) {
-                  api.updateMemory(memory['id'].toString(), newText);
+                  final success = await api.updateMemory(memory['id'].toString(), newText);
+                  if (context.mounted) {
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Memory updated successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update memory.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+                    }
+                  }
                 }
-                Navigator.pop(context);
               },
               child: const Text('Save'),
             ),
