@@ -139,6 +139,21 @@ class ApiProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> registerFcmToken(String token) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/fcm-token'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'token': token}),
+      );
+      if (response.statusCode != 200) {
+        print('Failed to register FCM token: ${response.body}');
+      }
+    } catch (e) {
+      print('Error registering FCM token: $e');
+    }
+  }
+
   Future<String?> transcribeAudio(String filePath) async {
     await _initFuture;
     _setLoading(true);

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'firebase_options.dart';
 import 'providers/api_provider.dart';
 import 'theme.dart';
 import 'screens/add_screen.dart';
@@ -8,7 +11,19 @@ import 'screens/chat_screen.dart';
 import 'screens/reminders_screen.dart';
 import 'screens/transactions_screen.dart';
 
-void main() {
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print("Handling a background message: ${message.messageId}");
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
   runApp(
     MultiProvider(
       providers: [
@@ -42,6 +57,29 @@ class DashboardShell extends StatefulWidget {
 
 class _DashboardShellState extends State<DashboardShell> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupFCM();
+  }
+
+  Future<void> _setupFCM() async {
+    // Request permission (mostly for iOS, but good practice)
+    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    NotificationSettings settings = await messaging.requestPermission();
+    
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      print('User granted permission for notifications');
+      // Get the token
+      String? token = await messaging.getToken();
+      if (token != null) {
+        if (mounted) {
+          Provider.of<ApiProvider>(context, listen: false).registerFcmToken(token);
+        }
+      }
+    }
+  }
 
   final List<Widget> _screens = [
     const AddScreen(),
