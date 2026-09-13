@@ -1,9 +1,22 @@
 import 'package:flutter/material.dart';
-import 'memory_screen.dart';
-import 'search_screen.dart';
+import 'package:provider/provider.dart';
+import 'providers/api_provider.dart';
+import 'theme.dart';
+import 'screens/add_screen.dart';
+import 'screens/memories_screen.dart';
+import 'screens/chat_screen.dart';
+import 'screens/reminders_screen.dart';
+import 'screens/transactions_screen.dart';
 
 void main() {
-  runApp(const VoiceMemoryApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ApiProvider()),
+      ],
+      child: const VoiceMemoryApp(),
+    ),
+  );
 }
 
 class VoiceMemoryApp extends StatelessWidget {
@@ -12,56 +25,73 @@ class VoiceMemoryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Voice Memory Hub',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
-      home: const MainNavigationScreen(),
+      title: 'Voice Memory',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.lightTheme,
+      home: const DashboardShell(),
     );
   }
 }
 
-class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+class DashboardShell extends StatefulWidget {
+  const DashboardShell({super.key});
 
   @override
-  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+  State<DashboardShell> createState() => _DashboardShellState();
 }
 
-class _MainNavigationScreenState extends State<MainNavigationScreen> {
-  int _selectedIndex = 0;
+class _DashboardShellState extends State<DashboardShell> {
+  int _currentIndex = 0;
 
-  // 1. Update the screen list
   final List<Widget> _screens = [
-    const MemoryScreen(),
-    const SearchScreen(),
+    const AddScreen(),
+    const MemoriesScreen(),
+    const ChatScreen(),
+    const RemindersScreen(),
+    const TransactionsScreen(),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Voice Memory Hub'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        switchInCurve: Curves.easeIn,
+        switchOutCurve: Curves.easeOut,
+        child: _screens[_currentIndex],
       ),
-      body: _screens[_selectedIndex],
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (int index) {
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
           setState(() {
-            _selectedIndex = index;
+            _currentIndex = index;
           });
         },
-        // 2. Update the icons in the navigation bar
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.add_circle_outline),
+            selectedIcon: Icon(Icons.add_circle),
             label: 'Add',
           ),
           NavigationDestination(
-            icon: Icon(Icons.search),
-            label: 'Search',
+            icon: Icon(Icons.view_agenda_outlined),
+            selectedIcon: Icon(Icons.view_agenda),
+            label: 'Memories',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.auto_awesome_outlined),
+            selectedIcon: Icon(Icons.auto_awesome),
+            label: 'AI Chat',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.access_time),
+            selectedIcon: Icon(Icons.access_time_filled),
+            label: 'Tasks',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet),
+            label: 'Finance',
           ),
         ],
       ),
