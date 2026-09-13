@@ -180,9 +180,70 @@ class ApiProvider extends ChangeNotifier {
       }
       return false;
     } catch (e) {
+      error = e.toString();
       return false;
     } finally {
       _setLoading(false);
+    }
+  }
+
+  Future<bool> deleteMultipleMemories(List<String> ids) async {
+    await _initFuture;
+    _setLoading(true);
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/memories'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'ids': ids}),
+      );
+      if (response.statusCode == 200) {
+        await fetchMemories();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> toggleStarMemory(String id, bool isStarred) async {
+    await _initFuture;
+    
+    // Optimistic UI update
+    int index = memories.indexWhere((m) => m['id'].toString() == id);
+    if (index != -1) {
+      memories[index]['is_starred'] = isStarred;
+      notifyListeners();
+    }
+
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/memory/$id/star'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'is_starred': isStarred}),
+      );
+      
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        // Revert on failure
+        if (index != -1) {
+          memories[index]['is_starred'] = !isStarred;
+          notifyListeners();
+        }
+        return false;
+      }
+    } catch (e) {
+      error = e.toString();
+      // Revert on failure
+      if (index != -1) {
+        memories[index]['is_starred'] = !isStarred;
+        notifyListeners();
+      }
+      return false;
     }
   }
 
