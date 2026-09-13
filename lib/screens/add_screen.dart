@@ -14,18 +14,22 @@ class AddScreen extends StatefulWidget {
   State<AddScreen> createState() => _AddScreenState();
 }
 
-class _AddScreenState extends State<AddScreen> with SingleTickerProviderStateMixin {
+class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
   final TextEditingController _textController = TextEditingController();
   late AnimationController _pulseController;
+  late TabController _tabController;
   final AudioRecorder _audioRecorder = AudioRecorder();
   
   bool _isRecording = false;
+  bool _isProcessing = false;
+  String _currentSource = 'text';
   String _selectedCategory = 'Idea';
   final List<String> _categories = ['Idea', 'Personal', 'Work', 'Finance'];
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -36,6 +40,7 @@ class _AddScreenState extends State<AddScreen> with SingleTickerProviderStateMix
   void dispose() {
     _textController.dispose();
     _pulseController.dispose();
+    _tabController.dispose();
     _audioRecorder.dispose();
     super.dispose();
   }
@@ -64,31 +69,28 @@ class _AddScreenState extends State<AddScreen> with SingleTickerProviderStateMix
       final path = await _audioRecorder.stop();
       setState(() {
         _isRecording = false;
+        _isProcessing = true;
       });
       
       if (path != null) {
-        final savedText = await Provider.of<ApiProvider>(context, listen: false).createAudioMemory(path);
+        final transcribedText = await Provider.of<ApiProvider>(context, listen: false).transcribeAudio(path);
+        
         if (mounted) {
-          if (savedText != null) {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Memory Saved'),
-                content: Text('Transcribed Text:\n\n$savedText'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('OK'),
-                  )
-                ],
-              ),
-            );
+          setState(() {
+            _isProcessing = false;
+          });
+          
+          if (transcribedText != null) {
+            // Populate the text field and switch to the Text tab for review
+            _textController.text = transcribedText;
+            _currentSource = 'audio';
+            _tabController.animateTo(1);
           } else {
             final apiProvider = Provider.of<ApiProvider>(context, listen: false);
             final errorMsg = apiProvider.error ?? 'Unknown error';
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Failed: $errorMsg'),
+                content: Text('Transcription Failed: $errorMsg'),
                 backgroundColor: AppTheme.error,
                 behavior: SnackBarBehavior.floating,
               ),
@@ -98,6 +100,9 @@ class _AddScreenState extends State<AddScreen> with SingleTickerProviderStateMix
       }
     } catch (e) {
       debugPrint("Error stopping record: $e");
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
     }
   }
 
@@ -105,16 +110,19 @@ class _AddScreenState extends State<AddScreen> with SingleTickerProviderStateMix
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    final success = await Provider.of<ApiProvider>(context, listen: false).createTextMemory(text);
+    final success = await Provider.of<ApiProvider>(context, listen: false).createTextMemory(text, source: _currentSource);
     
     if (mounted) {
       if (success) {
         _textController.clear();
+        _currentSource = 'text'; // Reset back to default
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('Memory saved successfully!'),
             backgroundColor: AppTheme.success,
             behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3), // Fades out in few seconds
           ),
         );
       } else {
@@ -131,27 +139,26 @@ class _AddScreenState extends State<AddScreen> with SingleTickerProviderStateMix
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Capture', style: TextStyle(fontWeight: FontWeight.bold)),
-          bottom: TabBar(
-            indicatorColor: AppTheme.primary,
-            labelColor: AppTheme.primary,
-            unselectedLabelColor: Colors.grey,
-            tabs: const [
-              Tab(icon: Icon(Icons.mic), text: 'Voice'),
-              Tab(icon: Icon(Icons.edit_note), text: 'Text'),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          children: [
-            _buildVoiceTab(),
-            _buildTextTab(),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Capture', style: TextStyle(fontWeight: FontWeight.bold)),
+        bottom: TabBar(
+          controller: _tabController,
+          indicatorColor: AppTheme.primary,
+          labelColor: AppTheme.primary,
+          unselectedLabelColor: Colors.grey,
+          tabs: const [
+            Tab(icon: Icon(Icons.mic), text: 'Voice'),
+            Tab(icon: Icon(Icons.edit_note), text: 'Text'),
           ],
         ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          _buildVoiceTab(),
+          _buildTextTab(),
+        ],
       ),
     );
   }
@@ -166,7 +173,9 @@ class _AddScreenState extends State<AddScreen> with SingleTickerProviderStateMix
             style: TextStyle(fontSize: 48, fontWeight: FontWeight.w300),
           ),
           const SizedBox(height: 40),
-          if (_isRecording)
+          if (_isProcessing)
+            const CircularProgressIndicator(color: AppTheme.primary)
+          else if (_isRecording)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(
@@ -190,42 +199,50 @@ class _AddScreenState extends State<AddScreen> with SingleTickerProviderStateMix
             )
           else
             const SizedBox(height: 40), // Placeholder for waveform
+            
           const SizedBox(height: 60),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isRecording = !_isRecording;
-              });
-            },
-            child: AnimatedBuilder(
-              animation: _pulseController,
-              builder: (context, child) {
-                return Container(
-                  padding: EdgeInsets.all(_isRecording ? 8.0 + (_pulseController.value * 8) : 8.0),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.primary.withOpacity(_isRecording ? 0.2 : 0.0),
-                  ),
-                  child: FloatingActionButton.large(
-                    onPressed: () {
-                      if (_isRecording) {
-                        _stopRecording();
-                      } else {
-                        _startRecording();
-                      }
-                    },
-                    backgroundColor: _isRecording ? AppTheme.error : AppTheme.primary,
-                    child: Icon(_isRecording ? Icons.stop : Icons.mic, size: 36),
-                  ),
-                );
+          if (!_isProcessing)
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isRecording = !_isRecording;
+                });
               },
+              child: AnimatedBuilder(
+                animation: _pulseController,
+                builder: (context, child) {
+                  return Container(
+                    padding: EdgeInsets.all(_isRecording ? 8.0 + (_pulseController.value * 8) : 8.0),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppTheme.primary.withOpacity(_isRecording ? 0.2 : 0.0),
+                    ),
+                    child: FloatingActionButton.large(
+                      onPressed: () {
+                        if (_isRecording) {
+                          _stopRecording();
+                        } else {
+                          _startRecording();
+                        }
+                      },
+                      backgroundColor: _isRecording ? AppTheme.error : AppTheme.primary,
+                      child: Icon(_isRecording ? Icons.stop : Icons.mic, size: 36),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
           const SizedBox(height: 20),
-          Text(
-            _isRecording ? 'Tap to stop recording' : 'Tap to start recording',
-            style: const TextStyle(color: Colors.grey),
-          ),
+          if (_isProcessing)
+            const Text(
+              'Transcribing... Please wait.',
+              style: TextStyle(color: Colors.grey),
+            )
+          else
+            Text(
+              _isRecording ? 'Tap to stop recording' : 'Tap to start recording',
+              style: const TextStyle(color: Colors.grey),
+            ),
         ],
       ),
     );

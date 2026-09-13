@@ -107,13 +107,53 @@ class ApiProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> createTextMemory(String text) async {
+  Future<String?> transcribeAudio(String filePath) async {
+    await _initFuture;
+    _setLoading(true);
+    Future<String?> attemptUpload() async {
+      var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/transcribe'));
+      request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      
+      var response = await request.send().timeout(const Duration(seconds: 30));
+      if (response.statusCode == 200) {
+        var responseData = await response.stream.bytesToString();
+        var jsonResponse = json.decode(responseData);
+        return jsonResponse['transcription'];
+      }
+      error = "Failed to transcribe audio (HTTP ${response.statusCode})";
+      return null;
+    }
+
+    try {
+      String? result = await attemptUpload();
+      if (result != null) return result;
+    } catch (e) {
+      if (baseUrl == _localUrl) {
+        print('Local transcription failed, falling back to cloud: $e');
+        baseUrl = _cloudUrl;
+        try {
+          return await attemptUpload();
+        } catch (e2) {
+          error = e2.toString();
+          return null;
+        }
+      }
+      error = e.toString();
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+    return null;
+  }
+
+  Future<bool> createTextMemory(String text, {String source = 'text'}) async {
+    await _initFuture;
     _setLoading(true);
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/memory/text'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'text': text}),
+        body: json.encode({'text': text, 'source': source}),
       );
       if (response.statusCode == 200) {
         await fetchMemories(); // Refresh list
