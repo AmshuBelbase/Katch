@@ -59,8 +59,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: ActionChip(
                     label: Text(s),
                     onPressed: () => _sendMessage(s),
-                    backgroundColor: AppTheme.primary.withOpacity(0.05),
+                    backgroundColor: AppTheme.primary.withOpacity(0.1),
                     side: BorderSide.none,
+                    labelStyle: const TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 );
               }).toList(),

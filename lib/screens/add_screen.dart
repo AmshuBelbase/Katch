@@ -268,6 +268,12 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
                         setState(() => _selectedCategory = cat);
                       }
                     },
+                    selectedColor: AppTheme.primary,
+                    checkmarkColor: Colors.white,
+                    labelStyle: TextStyle(
+                      color: _selectedCategory == cat ? Colors.white : Colors.black87,
+                      fontWeight: _selectedCategory == cat ? FontWeight.bold : FontWeight.normal,
+                    ),
                   ),
                 );
               }).toList(),

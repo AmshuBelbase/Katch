@@ -191,18 +191,20 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   Widget _buildActivityChart(List<dynamic> memories) {
     // Calculate activity for the last 7 days
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final List<int> activityCounts = List.filled(7, 0);
     final List<String> dayLabels = List.filled(7, '');
 
     for (int i = 0; i < 7; i++) {
-      final date = now.subtract(Duration(days: 6 - i));
+      final date = today.subtract(Duration(days: 6 - i));
       dayLabels[i] = DateFormat('E').format(date); // Mon, Tue...
     }
 
     for (var m in memories) {
       if (m['created_at'] != null) {
         DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
-        final difference = now.difference(createdAt).inDays;
+        DateTime createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
+        final difference = today.difference(createdDate).inDays;
         if (difference >= 0 && difference < 7) {
           activityCounts[6 - difference]++;
         }
