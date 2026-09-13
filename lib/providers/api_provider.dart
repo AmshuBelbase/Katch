@@ -14,6 +14,7 @@ class ApiProvider extends ChangeNotifier {
   List<dynamic> reminders = [];
   List<dynamic> transactions = [];
   List<dynamic> chatHistory = [];
+  List<dynamic> expenseCategories = [];
   Future<void>? _initFuture;
 
   ApiProvider() {
@@ -40,6 +41,7 @@ class ApiProvider extends ChangeNotifier {
       _fetchMemoriesInternal(),
       _fetchRemindersInternal(),
       _fetchTransactionsInternal(),
+      _fetchExpenseCategoriesInternal(),
     ]);
     _setLoading(false);
   }
@@ -91,6 +93,36 @@ class ApiProvider extends ChangeNotifier {
     _setLoading(true);
     await _fetchMemoriesInternal();
     _setLoading(false);
+  }
+
+  Future<void> _fetchExpenseCategoriesInternal() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/expense_categories'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        expenseCategories = data['categories'] ?? [];
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Failed to fetch expense categories: $e');
+    }
+  }
+
+  Future<void> addExpenseCategory(String name) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/expense_categories'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'name': name}),
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        expenseCategories.add(data['category']);
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Failed to add expense category: $e');
+    }
   }
 
   Future<void> _fetchMemoriesInternal() async {
