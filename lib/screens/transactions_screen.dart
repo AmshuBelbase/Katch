@@ -14,6 +14,10 @@ class TransactionsScreen extends StatefulWidget {
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
   int _currentMode = 0; // 0 = Personal, 1 = Splitwise
+  bool _showChart = true; // true = Pie, false = Bar
+  
+  String _selectedFilter = 'This Month'; // 'This Week', 'This Month', 'Select Month'
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -82,15 +86,134 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   // ================= PERSONAL MODE =================
 
+  Widget _buildFilterRow() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          _buildFilterChip('This Week'),
+          const SizedBox(width: 8),
+          _buildFilterChip('This Month'),
+          const SizedBox(width: 8),
+          _buildFilterChip('Select Month', isSelectMonth: true),
+        ]
+      )
+    );
+  }
+
+  Future<DateTime?> _showMonthPicker(BuildContext context, DateTime initialDate) async {
+    DateTime selectedDate = initialDate;
+    return showDialog<DateTime>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Month'),
+          content: SizedBox(
+            width: 300,
+            height: 300,
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                return Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => setState(() => selectedDate = DateTime(selectedDate.year - 1, selectedDate.month))),
+                        Text('${selectedDate.year}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        IconButton(icon: const Icon(Icons.arrow_forward), onPressed: () => setState(() => selectedDate = DateTime(selectedDate.year + 1, selectedDate.month))),
+                      ],
+                    ),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 2),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          bool isSelected = selectedDate.month == index + 1;
+                          return InkWell(
+                            onTap: () {
+                              setState(() => selectedDate = DateTime(selectedDate.year, index + 1));
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: isSelected ? AppTheme.primary : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                DateFormat('MMM').format(DateTime(2020, index + 1)),
+                                style: TextStyle(color: isSelected ? Colors.white : Colors.black87),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () => Navigator.pop(context, selectedDate), child: const Text('OK')),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterChip(String label, {bool isSelectMonth = false}) {
+    bool isSelected = _selectedFilter == (isSelectMonth ? 'Select Month' : label);
+    String displayLabel = label;
+    if (isSelectMonth && isSelected && _selectedDate != null) {
+      displayLabel = DateFormat('MMM yyyy').format(_selectedDate!);
+    }
+
+    return FilterChip(
+      label: Text(displayLabel),
+      selected: isSelected,
+      selectedColor: AppTheme.primary,
+      checkmarkColor: Colors.white,
+      labelStyle: TextStyle(
+        color: isSelected ? Colors.white : Colors.black87,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      onSelected: (selected) async {
+        if (isSelectMonth) {
+          final picked = await _showMonthPicker(context, _selectedDate ?? DateTime.now());
+          if (picked != null) {
+            setState(() {
+              _selectedFilter = 'Select Month';
+              _selectedDate = picked;
+            });
+          }
+        } else {
+          setState(() {
+            _selectedFilter = label;
+          });
+        }
+      },
+    );
+  }
+
   Widget _buildPersonalTab(ApiProvider api) {
     final now = DateTime.now();
     final personalTx = api.transactions.where((t) {
       if (t['transaction_type'] != 'expense' && t['transaction_type'] != 'income') return false;
       if (t['created_at'] != null) {
         final date = DateTime.parse(t['created_at']).toLocal();
-        return date.year == now.year && date.month == now.month;
+        if (_selectedFilter == 'This Week') {
+          final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+          return date.isAfter(startOfWeek.subtract(const Duration(days: 1)));
+        } else if (_selectedFilter == 'This Month') {
+          return date.year == now.year && date.month == now.month;
+        } else if (_selectedFilter == 'Select Month' && _selectedDate != null) {
+          return date.year == _selectedDate!.year && date.month == _selectedDate!.month;
+        }
       }
-      return false;
+      return true;
     }).toList();
 
     double totalIncome = 0;
@@ -115,21 +238,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              children: [
-                Expanded(child: _buildKPICard('Balance', netBalance, netBalance >= 0 ? AppTheme.success : AppTheme.error)),
-                const SizedBox(width: 8),
-                Expanded(child: _buildKPICard('Income', totalIncome, AppTheme.success)),
-                const SizedBox(width: 8),
-                Expanded(child: _buildKPICard('Expense', totalExpense, AppTheme.error)),
-              ],
-            ),
-          ),
+          child: _buildFilterRow(),
         ),
         SliverToBoxAdapter(
-          child: _buildPersonalVisualizations(totalIncome, totalExpense, categoryTotals),
+          child: _buildCashFlowHeader(netBalance, totalIncome, totalExpense),
+        ),
+        SliverToBoxAdapter(
+          child: _buildExpenseVisualization(categoryTotals, totalExpense),
         ),
         SliverToBoxAdapter(
           child: Padding(
@@ -137,7 +252,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Recent Transactions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text('Transactions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 TextButton.icon(
                   onPressed: () => _showAddCategoryDialog(api),
                   icon: const Icon(Icons.add, size: 16),
@@ -149,7 +264,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         ),
         if (personalTx.isEmpty)
           const SliverFillRemaining(
-            child: Center(child: Text('No personal transactions recorded this month.')),
+            child: Center(child: Text('No transactions recorded in this period.')),
           )
         else
           SliverList(
@@ -192,32 +307,39 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  Widget _buildPersonalVisualizations(double income, double expense, Map<String, double> categoryTotals) {
+  Widget _buildCashFlowHeader(double netBalance, double totalIncome, double totalExpense) {
+    final currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.surface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.black.withOpacity(0.05)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Cash Flow', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 12),
-          _buildCashFlowBar(income, expense),
-          const SizedBox(height: 24),
-          const Divider(),
-          const SizedBox(height: 12),
-          const Text('Expense Breakdown', style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 200,
-            child: _buildExpensePieChart(categoryTotals),
-          )
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
+      child: Column(
+        children: [
+          const Text('Balance', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(
+            currencyFormatter.format(netBalance), 
+            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: netBalance >= 0 ? AppTheme.success : AppTheme.error)
+          ),
+          const SizedBox(height: 32),
+          _buildCashFlowBar(totalIncome, totalExpense),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Income: ${currencyFormatter.format(totalIncome)}', style: const TextStyle(color: AppTheme.success, fontWeight: FontWeight.bold)),
+              Text('Expense: ${currencyFormatter.format(totalExpense)}', style: const TextStyle(color: AppTheme.error, fontWeight: FontWeight.bold)),
+            ]
+          )
+        ]
+      )
     );
   }
 
@@ -228,69 +350,187 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     int incomeFlex = (income / total * 100).toInt();
     int expenseFlex = (expense / total * 100).toInt();
     
-    // Ensure at least 1 flex if there is some amount
     if (income > 0 && incomeFlex == 0) incomeFlex = 1;
     if (expense > 0 && expenseFlex == 0) expenseFlex = 1;
 
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            if (incomeFlex > 0) 
-              Expanded(
-                flex: incomeFlex, 
-                child: Container(
-                  height: 16, 
-                  decoration: BoxDecoration(
-                    color: AppTheme.success, 
-                    borderRadius: expenseFlex == 0 ? BorderRadius.circular(8) : const BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8))
-                  )
-                )
-              ),
-            if (expenseFlex > 0) 
-              Expanded(
-                flex: expenseFlex, 
-                child: Container(
-                  height: 16, 
-                  decoration: BoxDecoration(
-                    color: AppTheme.error, 
-                    borderRadius: incomeFlex == 0 ? BorderRadius.circular(8) : const BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8))
-                  )
-                )
-              ),
-          ]
-        ),
-        const SizedBox(height: 8),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(children: [Container(width: 12, height: 12, decoration: BoxDecoration(color: AppTheme.success, borderRadius: BorderRadius.circular(2))), const SizedBox(width: 4), const Text('Income', style: TextStyle(fontSize: 12))]),
-            Row(children: [const Text('Expense', style: TextStyle(fontSize: 12)), const SizedBox(width: 4), Container(width: 12, height: 12, decoration: BoxDecoration(color: AppTheme.error, borderRadius: BorderRadius.circular(2)))]),
-          ]
-        )
+        if (incomeFlex > 0) 
+          Expanded(
+            flex: incomeFlex, 
+            child: Container(
+              height: 12, 
+              decoration: BoxDecoration(
+                color: AppTheme.success, 
+                borderRadius: expenseFlex == 0 ? BorderRadius.circular(6) : const BorderRadius.only(topLeft: Radius.circular(6), bottomLeft: Radius.circular(6))
+              )
+            )
+          ),
+        if (expenseFlex > 0) 
+          Expanded(
+            flex: expenseFlex, 
+            child: Container(
+              height: 12, 
+              decoration: BoxDecoration(
+                color: AppTheme.error, 
+                borderRadius: incomeFlex == 0 ? BorderRadius.circular(6) : const BorderRadius.only(topRight: Radius.circular(6), bottomRight: Radius.circular(6))
+              )
+            )
+          ),
       ]
     );
   }
 
-  Widget _buildExpensePieChart(Map<String, double> categoryTotals) {
-    if (categoryTotals.isEmpty) return const Center(child: Text("No expense data for pie chart."));
+  Widget _buildExpenseVisualization(Map<String, double> categoryTotals, double totalExpense) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Expense Breakdown', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          const SizedBox(height: 20),
+          if (_showChart)
+             _buildPieChartWithLegend(categoryTotals, totalExpense)
+          else
+             _buildHorizontalCategoryBar(categoryTotals, totalExpense)
+        ]
+      )
+    );
+  }
+
+  Widget _buildPieChartWithLegend(Map<String, double> categoryTotals, double totalExpense) {
+    if (categoryTotals.isEmpty || totalExpense == 0) return const SizedBox(height: 150, child: Center(child: Text("No expense data.")));
 
     List<PieChartSectionData> sections = [];
     int i = 0;
     List<Color> colors = [AppTheme.primary, AppTheme.secondary, AppTheme.tertiary, AppTheme.warning, AppTheme.error, Colors.purple, Colors.teal];
     
-    categoryTotals.forEach((name, amount) {
+    List<Widget> legendItems = [];
+
+    // Sort categories by amount descending
+    var sortedEntries = categoryTotals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+
+    for (var entry in sortedEntries) {
+      String name = entry.key;
+      double amount = entry.value;
+      Color c = colors[i % colors.length];
+      double percent = (amount / totalExpense) * 100;
+      
       sections.add(PieChartSectionData(
         value: amount,
-        title: name.length > 8 ? '${name.substring(0, 7)}..' : name,
-        color: colors[i % colors.length],
-        radius: 60,
-        titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+        title: '',
+        color: c,
+        radius: 40,
       ));
+      
+      legendItems.add(Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Container(width: 12, height: 12, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 8),
+            Expanded(child: Text(name, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis)),
+            Text('${percent.toStringAsFixed(1)}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ));
+      
       i++;
-    });
+    }
 
-    return PieChart(PieChartData(sectionsSpace: 2, centerSpaceRadius: 30, sections: sections));
+    return Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: SizedBox(
+            height: 120,
+            child: PieChart(PieChartData(sectionsSpace: 2, centerSpaceRadius: 20, sections: sections)),
+          ),
+        ),
+        const SizedBox(width: 24),
+        Expanded(
+          flex: 3,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: legendItems,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHorizontalCategoryBar(Map<String, double> categoryTotals, double totalExpense) {
+    if (categoryTotals.isEmpty || totalExpense == 0) return const SizedBox(height: 100, child: Center(child: Text("No expense data.")));
+
+    List<Color> colors = [AppTheme.primary, AppTheme.secondary, AppTheme.tertiary, AppTheme.warning, AppTheme.error, Colors.purple, Colors.teal];
+    
+    List<Widget> barSegments = [];
+    List<Widget> legendItems = [];
+    int i = 0;
+    
+    var sortedEntries = categoryTotals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+    
+    int processedCount = 0;
+    int totalCount = sortedEntries.length;
+
+    for (var entry in sortedEntries) {
+      String name = entry.key;
+      double amount = entry.value;
+      Color c = colors[i % colors.length];
+      int flex = (amount / totalExpense * 100).toInt();
+      if (flex == 0 && amount > 0) flex = 1;
+      
+      processedCount++;
+      BorderRadiusGeometry radius = BorderRadius.zero;
+      if (totalCount == 1) {
+        radius = BorderRadius.circular(8);
+      } else if (processedCount == 1) {
+        radius = const BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8));
+      } else if (processedCount == totalCount) {
+        radius = const BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8));
+      }
+
+      if (flex > 0) {
+        barSegments.add(Expanded(
+          flex: flex,
+          child: Container(
+            height: 24,
+            decoration: BoxDecoration(color: c, borderRadius: radius),
+          )
+        ));
+      }
+      
+      double percent = (amount / totalExpense) * 100;
+      legendItems.add(Padding(
+        padding: const EdgeInsets.only(right: 16, bottom: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(width: 12, height: 12, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2))),
+            const SizedBox(width: 6),
+            Text('$name (${percent.toStringAsFixed(1)}%)', style: const TextStyle(fontSize: 12)),
+          ],
+        ),
+      ));
+      
+      i++;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(children: barSegments),
+        const SizedBox(height: 24),
+        Wrap(children: legendItems),
+      ],
+    );
   }
 
   // ================= SPLITWISE MODE =================
@@ -298,12 +538,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   Widget _buildSplitwiseTab(ApiProvider api) {
     final splits = api.transactions.where((t) => t['transaction_type'] == 'split' || t['transaction_type'] == null).toList();
 
-    double totalInflow = 0; // Owed to me
-    double totalOutflow = 0; // I owe
+    double totalInflow = 0; 
+    double totalOutflow = 0; 
 
-    // personName -> Balance (positive = they owe me, negative = I owe them)
     Map<String, double> personBalances = {};
-    // personName -> List of transactions
     Map<String, List<dynamic>> personHistory = {};
 
     for (var t in splits) {
@@ -496,6 +734,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Finances', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          if (_currentMode == 0)
+            IconButton(
+              icon: Icon(_showChart ? Icons.bar_chart : Icons.pie_chart),
+              onPressed: () => setState(() => _showChart = !_showChart),
+            )
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(

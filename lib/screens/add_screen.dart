@@ -23,8 +23,6 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
   bool _isRecording = false;
   bool _isProcessing = false;
   String _currentSource = 'text';
-  String _selectedCategory = 'Idea';
-  final List<String> _categories = ['Idea', 'Personal', 'Work', 'Finance'];
 
   @override
   void initState() {
@@ -254,32 +252,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: _categories.map((cat) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ChoiceChip(
-                    label: Text(cat),
-                    selected: _selectedCategory == cat,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _selectedCategory = cat);
-                      }
-                    },
-                    selectedColor: AppTheme.primary,
-                    checkmarkColor: Colors.white,
-                    labelStyle: TextStyle(
-                      color: _selectedCategory == cat ? Colors.white : Colors.black87,
-                      fontWeight: _selectedCategory == cat ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-          const SizedBox(height: 16),
+          // Category chips removed
           Expanded(
             child: TextField(
               controller: _textController,
