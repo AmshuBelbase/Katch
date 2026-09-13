@@ -12,7 +12,21 @@ class RemindersScreen extends StatefulWidget {
 }
 
 class _RemindersScreenState extends State<RemindersScreen> {
-  
+  DateTime? _selectedDate;
+
+  void _onDateSelected(DateTime date) {
+    setState(() {
+      if (_selectedDate != null && 
+          _selectedDate!.year == date.year && 
+          _selectedDate!.month == date.month && 
+          _selectedDate!.day == date.day) {
+        _selectedDate = null;
+      } else {
+        _selectedDate = date;
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -45,14 +59,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
           List<dynamic> inAnHour = [];
           List<dynamic> today = [];
           List<dynamic> upcoming = [];
-          List<dynamic> completedList = [];
+          List<dynamic> completedToday = [];
+          List<dynamic> completedPast = [];
 
           for (var r in api.reminders) {
-            if (r['is_completed'] == true) {
-              completedList.add(r);
-              continue;
-            }
-            
             DateTime dueUtc = DateTime.parse(r['due_datetime']);
             // Fallback: if not UTC, assume it is UTC (sometimes backend sends without Z)
             if (!dueUtc.isUtc) {
@@ -60,23 +70,60 @@ class _RemindersScreenState extends State<RemindersScreen> {
             }
             DateTime dueLocal = dueUtc.toLocal();
             
+            if (_selectedDate != null) {
+              if (dueLocal.year != _selectedDate!.year || 
+                  dueLocal.month != _selectedDate!.month || 
+                  dueLocal.day != _selectedDate!.day) {
+                continue;
+              }
+            }
+            
+            bool isDueToday = dueLocal.year == nowLocal.year && dueLocal.month == nowLocal.month && dueLocal.day == nowLocal.day;
+
+            if (r['is_completed'] == true) {
+              if (isDueToday) {
+                completedToday.add(r);
+              } else {
+                completedPast.add(r);
+              }
+              continue;
+            }
+            
             Duration diffFromNow = dueUtc.difference(nowUtc);
 
             if (diffFromNow.isNegative) {
               overdue.add(r);
             } else if (diffFromNow.inMinutes <= 60) {
               inAnHour.add(r);
-            } else if (dueLocal.year == nowLocal.year && dueLocal.month == nowLocal.month && dueLocal.day == nowLocal.day) {
+            } else if (isDueToday) {
               today.add(r);
             } else {
               upcoming.add(r);
             }
           }
 
+          completedPast.sort((a, b) {
+            DateTime dueA = DateTime.parse(a['due_datetime']);
+            DateTime dueB = DateTime.parse(b['due_datetime']);
+            return dueB.compareTo(dueA);
+          });
+
+          List<dynamic> completedList = [...completedToday];
+          if (_selectedDate != null) {
+            completedList.addAll(completedPast);
+          } else if (completedList.length < 3) {
+            int needed = 3 - completedList.length;
+            completedList.addAll(completedPast.take(needed));
+          }
+
           return CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
-                child: TaskCalendar(reminders: api.reminders),
+                child: TaskCalendar(
+                  reminders: api.reminders,
+                  selectedDate: _selectedDate,
+                  onDateSelected: _onDateSelected,
+                ),
               ),
               if (overdue.isNotEmpty)
                 _buildSectionHeader('Overdue', AppTheme.error),
@@ -207,7 +254,15 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
 class TaskCalendar extends StatefulWidget {
   final List<dynamic> reminders;
-  const TaskCalendar({super.key, required this.reminders});
+  final DateTime? selectedDate;
+  final Function(DateTime) onDateSelected;
+
+  const TaskCalendar({
+    super.key, 
+    required this.reminders,
+    required this.selectedDate,
+    required this.onDateSelected,
+  });
 
   @override
   State<TaskCalendar> createState() => _TaskCalendarState();
@@ -336,13 +391,24 @@ class _TaskCalendarState extends State<TaskCalendar> {
               DateTime startOfToday = DateTime(_today.year, _today.month, _today.day);
               bool cellIsInPast = cellDate.isBefore(startOfToday);
               bool showOverdueBackground = cellIsInPast && taskCount > 0;
+              
+              bool isSelected = widget.selectedDate != null &&
+                  cellDate.year == widget.selectedDate!.year &&
+                  cellDate.month == widget.selectedDate!.month &&
+                  cellDate.day == widget.selectedDate!.day;
 
-              return Container(
-                decoration: BoxDecoration(
-                  color: showOverdueBackground ? AppTheme.error.withOpacity(0.1) : (isToday ? AppTheme.primary.withOpacity(0.1) : Colors.transparent),
-                  borderRadius: BorderRadius.circular(8),
-                  border: isToday ? Border.all(color: AppTheme.primary, width: 1.5) : Border.all(color: Colors.black.withOpacity(0.05)),
-                ),
+              return GestureDetector(
+                onTap: () => widget.onDateSelected(cellDate),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: isSelected 
+                        ? AppTheme.primary.withOpacity(0.3)
+                        : (showOverdueBackground ? AppTheme.error.withOpacity(0.1) : (isToday ? AppTheme.primary.withOpacity(0.1) : Colors.transparent)),
+                    borderRadius: BorderRadius.circular(8),
+                    border: isSelected 
+                        ? Border.all(color: AppTheme.primary, width: 2)
+                        : (isToday ? Border.all(color: AppTheme.primary, width: 1.5) : Border.all(color: Colors.black.withOpacity(0.05))),
+                  ),
                 child: Stack(
                   children: [
                     Positioned(
@@ -375,8 +441,9 @@ class _TaskCalendarState extends State<TaskCalendar> {
                       )
                   ],
                 ),
-              );
-            },
+              ),
+            );
+          },
           ),
         ),
       ],
