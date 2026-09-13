@@ -4,7 +4,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../providers/api_provider.dart';
 import '../theme.dart';
-import 'dart:math';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -14,8 +13,7 @@ class TransactionsScreen extends StatefulWidget {
 }
 
 class _TransactionsScreenState extends State<TransactionsScreen> {
-  int _currentMode = 0; // 0 = Expenses, 1 = Splitwise
-  bool _showChart = true;
+  int _currentMode = 0; // 0 = Personal, 1 = Splitwise
 
   @override
   void initState() {
@@ -82,29 +80,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  Widget _buildChartContainer(Widget child) {
-    if (!_showChart) return const SliverToBoxAdapter(child: SizedBox.shrink());
-    return SliverToBoxAdapter(
-      child: Container(
-        height: 220,
-        margin: const EdgeInsets.all(16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black.withOpacity(0.05)),
-        ),
-        child: child,
-      ),
-    );
-  }
+  // ================= PERSONAL MODE =================
 
-  // ================= EXPENSES MODE =================
-
-  Widget _buildExpensesTab(ApiProvider api) {
+  Widget _buildPersonalTab(ApiProvider api) {
     final now = DateTime.now();
-    final expenses = api.transactions.where((t) {
-      if (t['transaction_type'] != 'expense') return false;
+    final personalTx = api.transactions.where((t) {
+      if (t['transaction_type'] != 'expense' && t['transaction_type'] != 'income') return false;
       if (t['created_at'] != null) {
         final date = DateTime.parse(t['created_at']).toLocal();
         return date.year == now.year && date.month == now.month;
@@ -112,15 +93,24 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       return false;
     }).toList();
 
+    double totalIncome = 0;
     double totalExpense = 0;
     Map<String, double> categoryTotals = {};
 
-    for (var t in expenses) {
+    for (var t in personalTx) {
       double amt = double.parse(t['amount'].toString());
-      totalExpense += amt;
-      String cat = (t['category'] ?? 'Others').toString();
-      categoryTotals[cat] = (categoryTotals[cat] ?? 0) + amt;
+      bool isIncome = t['transaction_type'] == 'income';
+      
+      if (isIncome) {
+        totalIncome += amt;
+      } else {
+        totalExpense += amt;
+        String cat = (t['category'] ?? 'Others').toString();
+        categoryTotals[cat] = (categoryTotals[cat] ?? 0) + amt;
+      }
     }
+
+    double netBalance = totalIncome - totalExpense;
 
     return CustomScrollView(
       slivers: [
@@ -129,63 +119,161 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
               children: [
-                Expanded(child: _buildKPICard('Total Expense (This Month)', totalExpense, AppTheme.error)),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
+                Expanded(child: _buildKPICard('Balance', netBalance, netBalance >= 0 ? AppTheme.success : AppTheme.error)),
+                const SizedBox(width: 8),
+                Expanded(child: _buildKPICard('Income', totalIncome, AppTheme.success)),
+                const SizedBox(width: 8),
+                Expanded(child: _buildKPICard('Expense', totalExpense, AppTheme.error)),
+              ],
+            ),
+          ),
+        ),
+        SliverToBoxAdapter(
+          child: _buildPersonalVisualizations(totalIncome, totalExpense, categoryTotals),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Recent Transactions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                TextButton.icon(
                   onPressed: () => _showAddCategoryDialog(api),
-                  icon: const Icon(Icons.add),
+                  icon: const Icon(Icons.add, size: 16),
                   label: const Text('Category'),
                 ),
               ],
             ),
           ),
         ),
-        _buildChartContainer(_buildExpensePieChart(categoryTotals)),
-        const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('Recent Expenses', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ),
-        ),
-        if (expenses.isEmpty)
+        if (personalTx.isEmpty)
           const SliverFillRemaining(
-            child: Center(child: Text('No expenses recorded this month.')),
+            child: Center(child: Text('No personal transactions recorded this month.')),
           )
         else
           SliverList(
             delegate: SliverChildBuilderDelegate(
               (context, index) {
-                final t = expenses[index];
+                // sort personalTx so newest is first
+                personalTx.sort((a, b) {
+                  DateTime da = a['created_at'] != null ? DateTime.parse(a['created_at']) : DateTime.now();
+                  DateTime db = b['created_at'] != null ? DateTime.parse(b['created_at']) : DateTime.now();
+                  return db.compareTo(da);
+                });
+
+                final t = personalTx[index];
                 final currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
-                String cat = t['category'] ?? 'Others';
-                DateTime date = DateTime.parse(t['created_at']).toLocal();
+                String cat = t['category'] ?? (t['transaction_type'] == 'income' ? 'Income' : 'Others');
+                DateTime date = t['created_at'] != null ? DateTime.parse(t['created_at']).toLocal() : DateTime.now();
+                bool isIncome = t['transaction_type'] == 'income';
 
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   color: AppTheme.surface,
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: AppTheme.primary.withOpacity(0.1),
-                      child: Icon(Icons.receipt_long, color: AppTheme.primary),
+                      backgroundColor: isIncome ? AppTheme.success.withOpacity(0.1) : AppTheme.error.withOpacity(0.1),
+                      child: Icon(isIncome ? Icons.download : Icons.receipt_long, color: isIncome ? AppTheme.success : AppTheme.error),
                     ),
-                    title: Text(t['description'] ?? 'Expense', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    title: Text(t['description'] ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text('$cat • ${DateFormat('MMM d, h:mm a').format(date)}'),
                     trailing: Text(
-                      currencyFormatter.format(double.parse(t['amount'].toString())),
-                      style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.error, fontSize: 16),
+                      '${isIncome ? '+' : '-'}${currencyFormatter.format(double.parse(t['amount'].toString()))}',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: isIncome ? AppTheme.success : AppTheme.error, fontSize: 16),
                     ),
                   ),
                 );
               },
-              childCount: expenses.length,
+              childCount: personalTx.length,
             ),
           ),
       ],
     );
   }
 
+  Widget _buildPersonalVisualizations(double income, double expense, Map<String, double> categoryTotals) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.black.withOpacity(0.05)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Cash Flow', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          _buildCashFlowBar(income, expense),
+          const SizedBox(height: 24),
+          const Divider(),
+          const SizedBox(height: 12),
+          const Text('Expense Breakdown', style: TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 200,
+            child: _buildExpensePieChart(categoryTotals),
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCashFlowBar(double income, double expense) {
+    double total = income + expense;
+    if (total == 0) return const Center(child: Text('No cash flow data.'));
+    
+    int incomeFlex = (income / total * 100).toInt();
+    int expenseFlex = (expense / total * 100).toInt();
+    
+    // Ensure at least 1 flex if there is some amount
+    if (income > 0 && incomeFlex == 0) incomeFlex = 1;
+    if (expense > 0 && expenseFlex == 0) expenseFlex = 1;
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            if (incomeFlex > 0) 
+              Expanded(
+                flex: incomeFlex, 
+                child: Container(
+                  height: 16, 
+                  decoration: BoxDecoration(
+                    color: AppTheme.success, 
+                    borderRadius: expenseFlex == 0 ? BorderRadius.circular(8) : const BorderRadius.only(topLeft: Radius.circular(8), bottomLeft: Radius.circular(8))
+                  )
+                )
+              ),
+            if (expenseFlex > 0) 
+              Expanded(
+                flex: expenseFlex, 
+                child: Container(
+                  height: 16, 
+                  decoration: BoxDecoration(
+                    color: AppTheme.error, 
+                    borderRadius: incomeFlex == 0 ? BorderRadius.circular(8) : const BorderRadius.only(topRight: Radius.circular(8), bottomRight: Radius.circular(8))
+                  )
+                )
+              ),
+          ]
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(children: [Container(width: 12, height: 12, decoration: BoxDecoration(color: AppTheme.success, borderRadius: BorderRadius.circular(2))), const SizedBox(width: 4), const Text('Income', style: TextStyle(fontSize: 12))]),
+            Row(children: [const Text('Expense', style: TextStyle(fontSize: 12)), const SizedBox(width: 4), Container(width: 12, height: 12, decoration: BoxDecoration(color: AppTheme.error, borderRadius: BorderRadius.circular(2)))]),
+          ]
+        )
+      ]
+    );
+  }
+
   Widget _buildExpensePieChart(Map<String, double> categoryTotals) {
-    if (categoryTotals.isEmpty) return const Center(child: Text("No data for pie chart."));
+    if (categoryTotals.isEmpty) return const Center(child: Text("No expense data for pie chart."));
 
     List<PieChartSectionData> sections = [];
     int i = 0;
@@ -233,8 +321,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         personBalances[creditor] = (personBalances[creditor] ?? 0) - amt;
         
         personHistory.putIfAbsent(creditor, () => []).add(t);
-      } else {
-        // Third party split (ignore for now or attribute to someone)
       }
     }
 
@@ -256,7 +342,19 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
           ),
         ),
-        _buildChartContainer(_buildSplitwiseBarChart(personBalances)),
+        SliverToBoxAdapter(
+          child: Container(
+            height: 220,
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.black.withOpacity(0.05)),
+            ),
+            child: _buildSplitwiseBarChart(personBalances),
+          ),
+        ),
         const SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.all(16.0),
@@ -332,10 +430,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true, 
-              getTitlesWidget: (val, meta) => Padding(
-                padding: const EdgeInsets.only(top: 8.0),
-                child: Text(labels[val.toInt()], style: const TextStyle(fontSize: 10, color: Colors.grey)),
-              )
+              getTitlesWidget: (val, meta) {
+                if (val.toInt() >= labels.length) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(labels[val.toInt()], style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                );
+              }
             ),
           ),
           leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
@@ -360,7 +461,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       child: ExpansionTile(
         leading: CircleAvatar(
           backgroundColor: owesYou ? AppTheme.success.withOpacity(0.1) : AppTheme.error.withOpacity(0.1),
-          child: Text(person[0].toUpperCase(), style: TextStyle(color: owesYou ? AppTheme.success : AppTheme.error, fontWeight: FontWeight.bold)),
+          child: Text(person.isNotEmpty ? person[0].toUpperCase() : '?', style: TextStyle(color: owesYou ? AppTheme.success : AppTheme.error, fontWeight: FontWeight.bold)),
         ),
         title: Text(person, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(
@@ -371,7 +472,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           double amt = double.parse(t['amount'].toString());
           String creditor = t['creditor'].toString();
           bool isPositive = creditor.toLowerCase() == 'self';
-          DateTime date = DateTime.parse(t['created_at']).toLocal();
+          DateTime date = t['created_at'] != null ? DateTime.parse(t['created_at']).toLocal() : DateTime.now();
 
           return Container(
             color: Colors.black.withOpacity(0.02),
@@ -395,12 +496,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Finances', style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: Icon(_showChart ? Icons.pie_chart : Icons.bar_chart),
-            onPressed: () => setState(() => _showChart = !_showChart),
-          )
-        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -410,7 +505,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 Expanded(
                   child: SegmentedButton<int>(
                     segments: const [
-                      ButtonSegment(value: 0, label: Text('Expenses')),
+                      ButtonSegment(value: 0, label: Text('Personal')),
                       ButtonSegment(value: 1, label: Text('Splitwise')),
                     ],
                     selected: {_currentMode},
@@ -447,7 +542,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           }
 
           if (_currentMode == 0) {
-            return _buildExpensesTab(api);
+            return _buildPersonalTab(api);
           } else {
             return _buildSplitwiseTab(api);
           }
