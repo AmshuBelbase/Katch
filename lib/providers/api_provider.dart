@@ -178,7 +178,7 @@ class ApiProvider extends ChangeNotifier {
     return null;
   }
 
-  Future<bool> createTextMemory(String text, {String source = 'text'}) async {
+  Future<String?> createTextMemory(String text, {String source = 'text'}) async {
     await _initFuture;
     _setLoading(true);
     try {
@@ -189,9 +189,32 @@ class ApiProvider extends ChangeNotifier {
       );
       if (response.statusCode == 200) {
         await fetchMemories(); // Refresh list
-        return true;
+        var jsonResponse = json.decode(response.body);
+        return jsonResponse['database_id']?.toString();
       }
       error = "Failed to save memory";
+      return null;
+    } catch (e) {
+      error = e.toString();
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> updateMemory(String id, String newText) async {
+    await _initFuture;
+    _setLoading(true);
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/memory/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'text': newText}),
+      );
+      if (response.statusCode == 200) {
+        await fetchMemories();
+        return true;
+      }
       return false;
     } catch (e) {
       error = e.toString();

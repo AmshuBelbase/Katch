@@ -79,10 +79,9 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
           });
           
           if (transcribedText != null) {
-            // Populate the text field and switch to the Text tab for review
-            _textController.text = transcribedText;
-            _currentSource = 'audio';
-            _tabController.animateTo(1);
+            final api = Provider.of<ApiProvider>(context, listen: false);
+            Future<String?> saveFuture = api.createTextMemory(transcribedText, source: 'audio');
+            _showVoiceReviewDialog(context, transcribedText, saveFuture, api);
           } else {
             final apiProvider = Provider.of<ApiProvider>(context, listen: false);
             final errorMsg = apiProvider.error ?? 'Unknown error';
@@ -111,7 +110,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
     final success = await Provider.of<ApiProvider>(context, listen: false).createTextMemory(text, source: _currentSource);
     
     if (mounted) {
-      if (success) {
+      if (success != null) {
         _textController.clear();
         _currentSource = 'text'; // Reset back to default
         
@@ -267,21 +266,121 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
           const SizedBox(height: 16),
           Consumer<ApiProvider>(
             builder: (context, api, child) {
-              return FilledButton.icon(
-                onPressed: api.isLoading ? null : _saveTextMemory,
-                icon: api.isLoading 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Icon(Icons.save),
-                label: const Text('Save Memory'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
+              return Row(
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: api.isLoading 
+                        ? null 
+                        : () => _textController.clear(),
+                    icon: const Icon(Icons.clear),
+                    label: const Text('Clear'),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: FilledButton.icon(
+                      onPressed: api.isLoading ? null : _saveTextMemory,
+                      icon: api.isLoading 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.save),
+                      label: const Text('Save Memory'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ),
+                ],
               );
             }
           ),
         ],
       ),
+    );
+  }
+  void _showVoiceReviewDialog(BuildContext context, String transcribedText, Future<String?> saveFuture, ApiProvider api) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Voice Memory Saved'),
+          content: Text(transcribedText),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final id = await saveFuture;
+                if (id != null) {
+                  api.deleteMemory(id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Memory discarded')));
+                  }
+                }
+              },
+              child: const Text('Discard', style: TextStyle(color: Colors.red)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _showVoiceEditDialog(context, transcribedText, saveFuture, api);
+              },
+              child: const Text('Edit'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved automatically!')));
+              },
+              child: const Text('Looks Good'),
+            ),
+          ],
+        );
+      }
+    );
+  }
+
+  void _showVoiceEditDialog(BuildContext context, String currentText, Future<String?> saveFuture, ApiProvider api) {
+    final TextEditingController editController = TextEditingController(text: currentText);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Voice Memory'),
+          content: TextField(
+            controller: editController,
+            maxLines: 5,
+            decoration: const InputDecoration(border: OutlineInputBorder()),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), 
+              child: const Text('Cancel Edit'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(context);
+                final newText = editController.text.trim();
+                if (newText.isNotEmpty && newText != currentText) {
+                  final id = await saveFuture;
+                  if (id != null) {
+                    api.updateMemory(id, newText);
+                  } else {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to save memory. Please try again.'), backgroundColor: Colors.red));
+                    }
+                  }
+                }
+              },
+              child: const Text('Save Edits'),
+            ),
+          ],
+        );
+      }
     );
   }
 }

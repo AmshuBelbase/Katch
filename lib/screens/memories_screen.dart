@@ -444,6 +444,8 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                           onSelected: (val) {
                             if (val == 'delete') {
                               api.deleteMemory(memoryId);
+                            } else if (val == 'edit') {
+                              _showEditDialog(context, memory, api);
                             }
                           },
                           itemBuilder: (context) => [
@@ -467,6 +469,40 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
         ),
       ),
       ),
+    );
+  }
+  void _showEditDialog(BuildContext context, dynamic memory, ApiProvider api) {
+    final TextEditingController editController = TextEditingController(text: memory['raw_text']);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Edit Memory'),
+          content: TextField(
+            controller: editController,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final newText = editController.text.trim();
+                if (newText.isNotEmpty && newText != memory['raw_text']) {
+                  api.updateMemory(memory['id'].toString(), newText);
+                }
+                Navigator.pop(context);
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      }
     );
   }
 }
