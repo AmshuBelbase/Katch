@@ -17,6 +17,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _filter = 'All';
   final List<String> _filters = ['All', 'Audio', 'Text', 'Starred'];
+  DateTime? _selectedChartDate;
   
   Set<String> _selectedMemoryIds = {};
   bool get _isSelectionMode => _selectedMemoryIds.isNotEmpty;
@@ -44,7 +45,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 200,
             floating: true,
             pinned: true,
             title: _isSelectionMode 
@@ -126,8 +127,26 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
           ),
           Consumer<ApiProvider>(
             builder: (context, api, child) {
+              List<dynamic> chartMemories = List.from(api.memories);
+              
+              if (_searchController.text.isNotEmpty) {
+                final query = _searchController.text.toLowerCase();
+                chartMemories = chartMemories.where((m) {
+                  return (m['raw_text'] ?? '').toLowerCase().contains(query);
+                }).toList();
+              }
+
+              if (_filter != 'All') {
+                chartMemories = chartMemories.where((m) {
+                  if (_filter == 'Audio') return (m['source'] ?? '').toLowerCase() == 'audio';
+                  if (_filter == 'Text') return (m['source'] ?? '').toLowerCase() == 'text';
+                  if (_filter == 'Starred') return m['is_starred'] == true;
+                  return true;
+                }).toList();
+              }
+
               return SliverToBoxAdapter(
-                child: _buildActivityChart(api.memories),
+                child: _buildActivityChart(chartMemories),
               );
             },
           ),
@@ -148,6 +167,17 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 DateTime timeB = DateTime.parse(b['created_at']);
                 return timeB.compareTo(timeA);
               });
+
+              // Apply Chart Date Filter
+              if (_selectedChartDate != null) {
+                displayMemories = displayMemories.where((m) {
+                  if (m['created_at'] == null) return false;
+                  DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+                  return createdAt.year == _selectedChartDate!.year && 
+                         createdAt.month == _selectedChartDate!.month && 
+                         createdAt.day == _selectedChartDate!.day;
+                }).toList();
+              }
 
               // Apply Text Filter
               if (_searchController.text.isNotEmpty) {
@@ -214,6 +244,16 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     double maxY = activityCounts.isEmpty ? 5 : activityCounts.reduce(max).toDouble();
     if (maxY < 5) maxY = 5; // Give it a decent scale
 
+    int totalMemories = 0;
+    if (_selectedChartDate != null) {
+      final difference = today.difference(_selectedChartDate!).inDays;
+      if (difference >= 0 && difference < 7) {
+        totalMemories = activityCounts[6 - difference];
+      }
+    } else {
+      totalMemories = activityCounts.fold(0, (sum, item) => sum + item);
+    }
+
     return Container(
       height: 140,
       margin: const EdgeInsets.all(16),
@@ -226,14 +266,50 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Activity (Last 7 Days)', style: TextStyle(fontWeight: FontWeight.bold)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _selectedChartDate != null 
+                    ? 'Activity (${DateFormat('MMM d').format(_selectedChartDate!)})' 
+                    : 'Activity (Last 7 Days)', 
+                style: const TextStyle(fontWeight: FontWeight.bold)
+              ),
+              Text(
+                '$totalMemories memories',
+                style: const TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
           Expanded(
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
                 maxY: maxY,
-                barTouchData: BarTouchData(enabled: false),
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  handleBuiltInTouches: false,
+                  touchCallback: (FlTouchEvent event, barTouchResponse) {
+                    if (barTouchResponse == null || barTouchResponse.spot == null) {
+                      return;
+                    }
+                    if (event is FlTapDownEvent) {
+                      int index = barTouchResponse.spot!.touchedBarGroupIndex;
+                      final date = today.subtract(Duration(days: 6 - index));
+                      setState(() {
+                        if (_selectedChartDate != null && 
+                            _selectedChartDate!.year == date.year && 
+                            _selectedChartDate!.month == date.month && 
+                            _selectedChartDate!.day == date.day) {
+                          _selectedChartDate = null;
+                        } else {
+                          _selectedChartDate = date;
+                        }
+                      });
+                    }
+                  },
+                ),
                 titlesData: FlTitlesData(
                   show: true,
                   bottomTitles: AxisTitles(
@@ -257,12 +333,21 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 borderData: FlBorderData(show: false),
                 gridData: FlGridData(show: false),
                 barGroups: List.generate(7, (index) {
+                  final barDate = today.subtract(Duration(days: 6 - index));
+                  bool isSelected = _selectedChartDate != null &&
+                      barDate.year == _selectedChartDate!.year &&
+                      barDate.month == _selectedChartDate!.month &&
+                      barDate.day == _selectedChartDate!.day;
+                  bool anySelected = _selectedChartDate != null;
+
                   return BarChartGroupData(
                     x: index,
                     barRods: [
                       BarChartRodData(
                         toY: activityCounts[index].toDouble(),
-                        color: AppTheme.primary.withOpacity(0.8),
+                        color: anySelected 
+                            ? (isSelected ? AppTheme.primary : Colors.grey.withOpacity(0.3))
+                            : AppTheme.primary.withOpacity(0.8),
                         width: 12,
                         borderRadius: BorderRadius.circular(4),
                       ),

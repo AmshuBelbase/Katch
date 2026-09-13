@@ -402,7 +402,7 @@ class _TaskCalendarState extends State<TaskCalendar> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: isSelected 
-                        ? AppTheme.primary.withOpacity(0.3)
+                        ? AppTheme.primary
                         : (showOverdueBackground ? AppTheme.error.withOpacity(0.1) : (isToday ? AppTheme.primary.withOpacity(0.1) : Colors.transparent)),
                     borderRadius: BorderRadius.circular(8),
                     border: isSelected 
@@ -418,8 +418,8 @@ class _TaskCalendarState extends State<TaskCalendar> {
                         dayNumber.toString(),
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                          color: isToday ? AppTheme.primary : Colors.black87,
+                          fontWeight: (isToday || isSelected) ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected ? Colors.white : (isToday ? AppTheme.primary : Colors.black87),
                         ),
                       ),
                     ),
@@ -430,12 +430,12 @@ class _TaskCalendarState extends State<TaskCalendar> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                           decoration: BoxDecoration(
-                            color: showOverdueBackground ? AppTheme.error : AppTheme.primary,
+                            color: isSelected ? Colors.white : (showOverdueBackground ? AppTheme.error : AppTheme.primary),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             taskCount.toString(),
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: isSelected ? AppTheme.primary : Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ),
                       )
