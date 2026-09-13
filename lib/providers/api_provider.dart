@@ -17,6 +17,14 @@ class ApiProvider extends ChangeNotifier {
   List<dynamic> expenseCategories = [];
   Future<void>? _initFuture;
 
+  String _getTimezoneOffset() {
+    final offset = DateTime.now().timeZoneOffset;
+    final hours = offset.inHours.abs().toString().padLeft(2, '0');
+    final minutes = (offset.inMinutes.abs() % 60).toString().padLeft(2, '0');
+    final sign = offset.isNegative ? '-' : '+';
+    return '$sign$hours:$minutes';
+  }
+
   ApiProvider() {
     _initFuture = _initializeConnectivity();
   }
@@ -54,6 +62,7 @@ class ApiProvider extends ChangeNotifier {
     Future<String?> attemptUpload() async {
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/memory'));
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      request.fields['timezone_offset'] = _getTimezoneOffset();
       
       var response = await request.send().timeout(const Duration(seconds: 30));
       if (response.statusCode == 200) {
@@ -140,6 +149,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<void> registerFcmToken(String token) async {
+    await _initFuture;
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/fcm-token'),
@@ -160,6 +170,7 @@ class ApiProvider extends ChangeNotifier {
     Future<String?> attemptUpload() async {
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/transcribe'));
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
+      request.fields['timezone_offset'] = _getTimezoneOffset();
       
       var response = await request.send().timeout(const Duration(seconds: 30));
       if (response.statusCode == 200) {
@@ -200,7 +211,11 @@ class ApiProvider extends ChangeNotifier {
       final response = await http.post(
         Uri.parse('$baseUrl/memory/text'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'text': text, 'source': source}),
+        body: json.encode({
+          'text': text, 
+          'source': source,
+          'timezone_offset': _getTimezoneOffset()
+        }),
       );
       if (response.statusCode == 200) {
         await fetchMemories(); // Refresh list
@@ -224,7 +239,10 @@ class ApiProvider extends ChangeNotifier {
       final response = await http.put(
         Uri.parse('$baseUrl/memory/$id'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'text': newText}),
+        body: json.encode({
+          'text': newText,
+          'timezone_offset': _getTimezoneOffset()
+        }),
       );
       if (response.statusCode == 200) {
         await fetchMemories();
