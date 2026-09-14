@@ -425,7 +425,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     List<PieChartSectionData> sections = [];
     int i = 0;
-    List<Color> colors = [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary, Theme.of(context).colorScheme.tertiary, AppTheme.warning, AppTheme.errorColor(context), Colors.purple, Colors.teal];
+    List<Color> colors = Theme.of(context).brightness == Brightness.dark
+        ? [const Color(0xFF6366F1), const Color(0xFF8B5CF6), const Color(0xFFEC4899), const Color(0xFFF43F5E), const Color(0xFFF59E0B), const Color(0xFF10B981), const Color(0xFF06B6D4)]
+        : [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary, Theme.of(context).colorScheme.tertiary, AppTheme.warning, AppTheme.errorColor(context), Colors.purple, Colors.teal];
     
     List<Widget> legendItems = [];
 
@@ -485,7 +487,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   Widget _buildHorizontalCategoryBar(Map<String, double> categoryTotals, double totalExpense) {
     if (categoryTotals.isEmpty || totalExpense == 0) return const SizedBox(height: 100, child: Center(child: Text("No expense data.")));
 
-    List<Color> colors = [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary, Theme.of(context).colorScheme.tertiary, AppTheme.warning, AppTheme.errorColor(context), Colors.purple, Colors.teal];
+    List<Color> colors = Theme.of(context).brightness == Brightness.dark
+        ? [const Color(0xFF6366F1), const Color(0xFF8B5CF6), const Color(0xFFEC4899), const Color(0xFFF43F5E), const Color(0xFFF59E0B), const Color(0xFF10B981), const Color(0xFF06B6D4)]
+        : [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary, Theme.of(context).colorScheme.tertiary, AppTheme.warning, AppTheme.errorColor(context), Colors.purple, Colors.teal];
     
     List<Widget> barSegments = [];
     List<Widget> legendItems = [];

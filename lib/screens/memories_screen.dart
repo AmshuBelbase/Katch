@@ -582,14 +582,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
             ),
           ),
           actions: [
-              if (!_isSelectionMode)
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () async {
-                    await Supabase.instance.client.auth.signOut();
-                  },
-                ),
-
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),
