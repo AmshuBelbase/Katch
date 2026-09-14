@@ -446,6 +446,38 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                     children: [
                       IconButton(
                         icon: Icon(
+                          api.reminders.any((r) => r['memory_id'] == memoryId) ? Icons.alarm_on : Icons.add_alarm, 
+                          color: api.reminders.any((r) => r['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
+                          size: 20
+                        ),
+                        onPressed: () {
+                          if (!api.reminders.any((r) => r['memory_id'] == memoryId)) {
+                            _showManualReminderDialog(context, memoryId, api);
+                          }
+                        },
+                        tooltip: api.reminders.any((r) => r['memory_id'] == memoryId) ? 'Reminder added' : 'Add to Reminders',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: Icon(
+                          api.transactions.any((t) => t['memory_id'] == memoryId) ? Icons.monetization_on : Icons.add_card, 
+                          color: api.transactions.any((t) => t['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
+                          size: 20
+                        ),
+                        onPressed: () {
+                          if (!api.transactions.any((t) => t['memory_id'] == memoryId)) {
+                            _showManualTransactionDialog(context, memoryId, api);
+                          }
+                        },
+                        tooltip: api.transactions.any((t) => t['memory_id'] == memoryId) ? 'Finance added' : 'Add to Finance',
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: Icon(
                           isStarred ? Icons.star : Icons.star_border,
                           color: isStarred ? Colors.amber : Colors.grey,
                         ),
@@ -495,43 +527,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    api.reminders.any((r) => r['memory_id'] == memoryId) ? Icons.alarm_on : Icons.add_alarm, 
-                    color: api.reminders.any((r) => r['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
-                    size: 20
-                  ),
-                  onPressed: () {
-                    if (!api.reminders.any((r) => r['memory_id'] == memoryId)) {
-                      _showManualReminderDialog(context, memoryId, api);
-                    }
-                  },
-                  tooltip: api.reminders.any((r) => r['memory_id'] == memoryId) ? 'Reminder added' : 'Add to Reminders',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 16),
-                IconButton(
-                  icon: Icon(
-                    api.transactions.any((t) => t['memory_id'] == memoryId) ? Icons.monetization_on : Icons.add_card, 
-                    color: api.transactions.any((t) => t['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
-                    size: 20
-                  ),
-                  onPressed: () {
-                    if (!api.transactions.any((t) => t['memory_id'] == memoryId)) {
-                      _showManualTransactionDialog(context, memoryId, api);
-                    }
-                  },
-                  tooltip: api.transactions.any((t) => t['memory_id'] == memoryId) ? 'Finance added' : 'Add to Finance',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            )
           ],
         ),
       ),
