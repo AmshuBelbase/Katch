@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiProvider extends ChangeNotifier {
@@ -20,9 +20,17 @@ class ApiProvider extends ChangeNotifier {
     }
   }
 
-  String baseUrl = "http://127.0.0.1:8000/api";
-  final String _localUrl = "http://127.0.0.1:8000/api";
+  // Use 10.0.2.2 for Android emulators, otherwise 127.0.0.1
+  String get _localUrl {
+    try {
+      if (Platform.isAndroid) return "http://10.0.2.2:8000/api";
+    } catch (_) {}
+    return "http://127.0.0.1:8000/api";
+  }
+  
   final String _cloudUrl = "https://memappbackend.onrender.com/api";
+  
+  late String baseUrl = _localUrl; // Default to local backend
 
   bool isLoading = false;
   String? error;
@@ -48,26 +56,49 @@ class ApiProvider extends ChangeNotifier {
 
   Future<void> _initializeConnectivity() async {
     _setLoading(true);
-    try {
-      // Ping local server to see if it's running
-      final response = await http.get(Uri.parse('$_localUrl/memories'), headers: _headers).timeout(const Duration(seconds: 15));
-      if (response.statusCode == 200) {
-        baseUrl = _localUrl;
-      } else {
-        baseUrl = _cloudUrl;
+    error = null;
+    
+    Future<bool> checkHealth(String url) async {
+      try {
+        final response = await http.get(Uri.parse('$url/health')).timeout(const Duration(seconds: 5));
+        return response.statusCode == 200;
+      } catch (_) {
+        return false;
       }
-    } catch (_) {
-      // Local server is offline or unreachable, fallback to cloud
+    }
+
+    // Ping both endpoints in parallel
+    final results = await Future.wait([
+      checkHealth(_localUrl),
+      checkHealth(_cloudUrl),
+    ]);
+
+    final isLocalAlive = results[0];
+    final isCloudAlive = results[1];
+
+    if (isLocalAlive) {
+      baseUrl = _localUrl;
+      print("Connected to LOCAL server at $baseUrl");
+    } else if (isCloudAlive) {
       baseUrl = _cloudUrl;
+      print("Connected to CLOUD server at $baseUrl");
+    } else {
+      error = "Cannot access server. Please check your internet connection.";
+      _setLoading(false);
+      notifyListeners();
+      throw Exception(error); // Bubble up so dependent API calls stop
     }
     
-    // Now fetch all data using the determined baseUrl
-    await Future.wait([
-      _fetchMemoriesInternal(),
-      _fetchRemindersInternal(),
-      _fetchTransactionsInternal(),
-      _fetchExpenseCategoriesInternal(),
-    ]);
+    // Only fetch data if we have an active auth session
+    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (token != null) {
+      await Future.wait([
+        _fetchMemoriesInternal(),
+        _fetchRemindersInternal(),
+        _fetchTransactionsInternal(),
+        _fetchExpenseCategoriesInternal(),
+      ]);
+    }
     _setLoading(false);
   }
 
@@ -245,7 +276,46 @@ class ApiProvider extends ChangeNotifier {
       return null;
     } catch (e) {
       error = e.toString();
+      notifyListeners();
       return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> requestOTP(String name, String email, String password) async {
+    await _initFuture;
+    _setLoading(true);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/request-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'name': name, 'email': email, 'password': password}),
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        throw Exception(jsonDecode(response.body)['detail'] ?? 'Failed to request OTP');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> verifyOTP(String email, String otp) async {
+    await _initFuture;
+    _setLoading(true);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/verify-otp'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'otp': otp}),
+      );
+      if (response.statusCode != 200) {
+        throw Exception(jsonDecode(response.body)['detail'] ?? 'Failed to verify OTP');
+      }
+    } catch (e) {
+      throw Exception(e.toString());
     } finally {
       _setLoading(false);
     }

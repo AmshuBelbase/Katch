@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../providers/api_provider.dart';
 import '../theme.dart';
 
 class OtpScreen extends StatefulWidget {
   final String email;
   final OtpType type;
+  final String? password;
 
-  const OtpScreen({Key? key, required this.email, required this.type}) : super(key: key);
+  const OtpScreen({Key? key, required this.email, required this.type, this.password}) : super(key: key);
 
   @override
   _OtpScreenState createState() => _OtpScreenState();
@@ -27,25 +30,33 @@ class _OtpScreenState extends State<OtpScreen> {
 
     setState(() => _isLoading = true);
     try {
-      await Supabase.instance.client.auth.verifyOTP(
-        type: widget.type,
-        email: widget.email,
-        token: code,
-      );
-      // Once verified, the session is created, AuthWrapper automatically routes to Dashboard.
+      if (widget.type == OtpType.signup) {
+        // Custom OTP flow for signup
+        await Provider.of<ApiProvider>(context, listen: false).verifyOTP(widget.email, code);
+        // After backend successfully verifies and creates the user, log them in natively!
+        if (widget.password != null) {
+          await Supabase.instance.client.auth.signInWithPassword(
+            email: widget.email,
+            password: widget.password!,
+          );
+        }
+      } else {
+        // Fallback for other OTP types (like recovery) if needed later
+        await Supabase.instance.client.auth.verifyOTP(
+          type: widget.type,
+          email: widget.email,
+          token: code,
+        );
+      }
+      
+      // Once verified and logged in, AuthWrapper automatically routes to Dashboard.
       if (mounted) {
         Navigator.pop(context); // Pop OTP screen, AuthWrapper will handle the rest.
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message), backgroundColor: Theme.of(context).colorScheme.error),
-        );
       }
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unexpected error occurred')),
+          SnackBar(content: Text(error.toString().replaceAll('Exception: ', '')), backgroundColor: Theme.of(context).colorScheme.error),
         );
       }
     } finally {
