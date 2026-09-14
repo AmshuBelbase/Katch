@@ -564,7 +564,8 @@ class ApiProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat?q=${Uri.encodeComponent(message)}'), headers: _headers);
+      final offset = Uri.encodeComponent(_getTimezoneOffset());
+      final response = await http.get(Uri.parse('$baseUrl/chat?q=${Uri.encodeComponent(message)}&timezone_offset=$offset'), headers: _headers);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         chatHistory.add({"sender": "ai", "text": data['answer']});

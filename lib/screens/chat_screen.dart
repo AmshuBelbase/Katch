@@ -17,9 +17,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
 
   final List<String> _suggestions = [
-    "Summarize my week",
     "Recent expenses?",
-    "Pending tasks",
+    "Pending tasks?",
+    "Summarize my week",
     "What did I say about Siddhant?"
   ];
 
