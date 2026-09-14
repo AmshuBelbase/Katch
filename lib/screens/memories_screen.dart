@@ -16,144 +16,6 @@ class MemoriesScreen extends StatefulWidget {
   State<MemoriesScreen> createState() => _MemoriesScreenState();
 }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
 class _MemoriesScreenState extends State<MemoriesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _filter = 'All';
@@ -174,288 +36,12 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     });
   }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -564,144 +150,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 }).toList();
               }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
               if (_filter != 'All') {
                 chartMemories = chartMemories.where((m) {
                   if (_filter == 'Audio') return (m['source'] ?? '').toLowerCase() == 'audio';
@@ -711,144 +159,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 }).toList();
               }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
               return SliverToBoxAdapter(
                 child: _buildActivityChart(chartMemories),
               );
@@ -862,144 +172,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 );
               }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
               // Apply Search, Filter, and Sorting
               List<dynamic> displayMemories = List.from(api.memories);
               
@@ -1021,144 +193,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 }).toList();
               }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
               // Apply Text Filter
               if (_searchController.text.isNotEmpty) {
                 final query = _searchController.text.toLowerCase();
@@ -1167,144 +201,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 }).toList();
               }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
               // Apply Chip Filter
               if (_filter != 'All') {
                 displayMemories = displayMemories.where((m) {
@@ -1315,144 +211,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 }).toList();
               }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
               if (displayMemories.isEmpty) {
                 return const SliverFillRemaining(
                   child: Center(child: Text("No notes found.")),
@@ -1474,144 +232,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     );
   }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
   Widget _buildActivityChart(List<dynamic> memories) {
     // Calculate activity for the last 7 days
     final now = DateTime.now();
@@ -1624,144 +244,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       dayLabels[i] = DateFormat('E').format(date); // Mon, Tue...
     }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
     for (var m in memories) {
       if (m['created_at'] != null) {
         DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
@@ -1773,144 +255,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       }
     }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
     double maxY = activityCounts.isEmpty ? 5 : activityCounts.reduce(max).toDouble();
     if (maxY < 5) maxY = 5; // Give it a decent scale
 
@@ -1924,144 +268,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       totalMemories = activityCounts.fold(0, (sum, item) => sum + item);
     }
 
-  void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController taskController = TextEditingController();
-    DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Reminders'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: taskController,
-                    decoration: const InputDecoration(labelText: 'Task name'),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Text('Due: '),
-                      const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
-                          final date = await showDatePicker(
-                            context: context,
-                            initialDate: selectedDate,
-                            firstDate: DateTime.now(),
-                            lastDate: DateTime(2100),
-                          );
-                          if (date != null) {
-                            final time = await showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay.fromDateTime(selectedDate),
-                            );
-                            if (time != null) {
-                              setState(() {
-                                selectedDate = DateTime(date.year, date.month, date.day, time.hour, time.minute);
-                              });
-                            }
-                          }
-                        },
-                      )
-                    ],
-                  )
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (taskController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualReminder({
-                        'memory_id': memoryId,
-                        'task_name': taskController.text,
-                        'due_datetime': selectedDate.toIso8601String()
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Reminders')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-
-  void _showManualTransactionDialog(BuildContext context, String memoryId, ApiProvider api) {
-    final TextEditingController amountController = TextEditingController();
-    final TextEditingController descController = TextEditingController();
-    String type = 'expense';
-    
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Add to Finance'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DropdownButton<String>(
-                    value: type,
-                    isExpanded: true,
-                    items: ['expense', 'income', 'split'].map((String v) => DropdownMenuItem(value: v, child: Text(v.toUpperCase()))).toList(),
-                    onChanged: (v) {
-                      if (v != null) setState(() => type = v);
-                    },
-                  ),
-                  TextField(
-                    controller: amountController,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Amount'),
-                  ),
-                  TextField(
-                    controller: descController,
-                    decoration: const InputDecoration(labelText: 'Description'),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (amountController.text.isNotEmpty) {
-                      Navigator.pop(dialogContext);
-                      bool s = await api.addManualTransaction({
-                        'memory_id': memoryId,
-                        'transaction_type': type,
-                        'amount': double.tryParse(amountController.text) ?? 0,
-                        'description': descController.text,
-                        'currency': 'INR',
-                        'category': 'Others'
-                      });
-                      if (s && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to Finance')));
-                      }
-                    }
-                  },
-                  child: const Text('Add')
-                )
-              ],
-            );
-          }
-        );
-      }
-    );
-  }
-}
     return Container(
       height: 140,
       margin: const EdgeInsets.all(16),
@@ -2179,6 +385,209 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     );
   }
 
+  Widget _buildMemoryCard(dynamic memory, ApiProvider api) {
+    DateTime createdAt = DateTime.parse(memory['created_at']).toLocal();
+    String formattedDate = DateFormat('MMM d, yyyy • h:mm a').format(createdAt);
+    
+    String source = memory['source'] ?? 'text';
+    bool isAudio = source.toLowerCase() == 'audio';
+    bool isStarred = memory['is_starred'] ?? false;
+    String memoryId = memory['id'].toString();
+    bool isSelected = _selectedMemoryIds.contains(memoryId);
+
+    return Card(
+      color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Theme.of(context).colorScheme.surface,
+      child: InkWell(
+        onLongPress: () {
+          setState(() {
+            _selectedMemoryIds.add(memoryId);
+          });
+        },
+        onTap: () {
+          if (_isSelectionMode) {
+            setState(() {
+              if (isSelected) {
+                _selectedMemoryIds.remove(memoryId);
+              } else {
+                _selectedMemoryIds.add(memoryId);
+              }
+            });
+          }
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      if (_isSelectionMode)
+                        Checkbox(
+                          value: isSelected,
+                          onChanged: (val) {
+                            setState(() {
+                              if (val == true) {
+                                _selectedMemoryIds.add(memoryId);
+                              } else {
+                                _selectedMemoryIds.remove(memoryId);
+                              }
+                            });
+                          },
+                        ),
+                      Icon(isAudio ? Icons.mic : Icons.notes, size: 16, color: Colors.grey),
+                      const SizedBox(width: 8),
+                      Text(formattedDate, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          isStarred ? Icons.star : Icons.star_border,
+                          color: isStarred ? Colors.amber : Colors.grey,
+                        ),
+                        onPressed: () async {
+                          bool success = await api.toggleStarMemory(memoryId, !isStarred);
+                          if (!success && context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("Couldn't star due to a connection problem."),
+                                duration: Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        },
+                      ),
+                      if (!_isSelectionMode)
+                        PopupMenuButton<String>(
+                          onSelected: (val) async {
+                            if (val == 'delete') {
+                              final success = await api.deleteMemory(memoryId);
+                              if (context.mounted) {
+                                if (success) {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note deleted.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete note.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+                                }
+                              }
+                            } else if (val == 'edit') {
+                              _showEditDialog(context, memory, api);
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                            const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                          ],
+                          icon: const Icon(Icons.more_vert, size: 20),
+                        )
+                    ],
+                  )
+                ],
+              ),
+            const SizedBox(height: 8),
+            Text(
+              memory['raw_text'] ?? '',
+              style: const TextStyle(fontSize: 16),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: Icon(
+                    api.reminders.any((r) => r['memory_id'] == memoryId) ? Icons.alarm_on : Icons.add_alarm, 
+                    color: api.reminders.any((r) => r['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
+                    size: 20
+                  ),
+                  onPressed: () {
+                    if (!api.reminders.any((r) => r['memory_id'] == memoryId)) {
+                      _showManualReminderDialog(context, memoryId, api);
+                    }
+                  },
+                  tooltip: api.reminders.any((r) => r['memory_id'] == memoryId) ? 'Reminder added' : 'Add to Reminders',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+                const SizedBox(width: 16),
+                IconButton(
+                  icon: Icon(
+                    api.transactions.any((t) => t['memory_id'] == memoryId) ? Icons.monetization_on : Icons.add_card, 
+                    color: api.transactions.any((t) => t['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
+                    size: 20
+                  ),
+                  onPressed: () {
+                    if (!api.transactions.any((t) => t['memory_id'] == memoryId)) {
+                      _showManualTransactionDialog(context, memoryId, api);
+                    }
+                  },
+                  tooltip: api.transactions.any((t) => t['memory_id'] == memoryId) ? 'Finance added' : 'Add to Finance',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ],
+            )
+          ],
+        ),
+      ),
+      ),
+    );
+  }
+  void _showEditDialog(BuildContext context, dynamic memory, ApiProvider api) {
+    final TextEditingController editController = TextEditingController(text: memory['raw_text']);
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Edit Note'),
+          content: TextField(
+            controller: editController,
+            maxLines: 5,
+            decoration: const InputDecoration(
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+              if (!_isSelectionMode)
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () async {
+                    await Supabase.instance.client.auth.signOut();
+                  },
+                ),
+
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final newText = editController.text.trim();
+                Navigator.pop(dialogContext);
+                if (newText.isNotEmpty && newText != memory['raw_text']) {
+                  final success = await api.updateMemory(memory['id'].toString(), newText);
+                  if (context.mounted) {
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note updated successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update note.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+                    }
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      }
+    );
+  }
+
   void _showManualReminderDialog(BuildContext context, String memoryId, ApiProvider api) {
     final TextEditingController taskController = TextEditingController();
     DateTime selectedDate = DateTime.now().add(const Duration(hours: 1));
@@ -2200,7 +609,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Text('Due: '),
+                      Text('Due: ${DateFormat('MMM d, h:mm a').format(selectedDate)}'),
                       const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.calendar_today),
@@ -2312,211 +721,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               ],
             );
           }
-        );
-      }
-    );
-  }
-}
-  Widget _buildMemoryCard(dynamic memory, ApiProvider api) {
-    DateTime createdAt = DateTime.parse(memory['created_at']).toLocal();
-    String formattedDate = DateFormat('MMM d, yyyy • h:mm a').format(createdAt);
-    
-    String source = memory['source'] ?? 'text';
-    bool isAudio = source.toLowerCase() == 'audio';
-    bool isStarred = memory['is_starred'] ?? false;
-    String memoryId = memory['id'].toString();
-    bool isSelected = _selectedMemoryIds.contains(memoryId);
-
-    return Card(
-      color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Theme.of(context).colorScheme.surface,
-      child: InkWell(
-        onLongPress: () {
-          setState(() {
-            _selectedMemoryIds.add(memoryId);
-          });
-        },
-        onTap: () {
-          if (_isSelectionMode) {
-            setState(() {
-              if (isSelected) {
-                _selectedMemoryIds.remove(memoryId);
-              } else {
-                _selectedMemoryIds.add(memoryId);
-              }
-            });
-          }
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      if (_isSelectionMode)
-                        Checkbox(
-                          value: isSelected,
-                          onChanged: (val) {
-                            setState(() {
-                              if (val == true) {
-                                _selectedMemoryIds.add(memoryId);
-                              } else {
-                                _selectedMemoryIds.remove(memoryId);
-                              }
-                            });
-                          },
-                        ),
-                      Icon(isAudio ? Icons.mic : Icons.notes, size: 16, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      Text(formattedDate, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          isStarred ? Icons.star : Icons.star_border,
-                          color: isStarred ? Colors.amber : Colors.grey,
-                        ),
-                        onPressed: () async {
-                          bool success = await api.toggleStarMemory(memoryId, !isStarred);
-                          if (!success && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Couldn't star due to a connection problem."),
-                                duration: Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        },
-                      ),
-                      if (!_isSelectionMode)
-                        PopupMenuButton<String>(
-                          onSelected: (val) async {
-                            if (val == 'delete') {
-                              final success = await api.deleteMemory(memoryId);
-                              if (context.mounted) {
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note deleted.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete note.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
-                                }
-                              }
-                            } else if (val == 'edit') {
-                              _showEditDialog(context, memory, api);
-                            }
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                            const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
-                          ],
-                          icon: const Icon(Icons.more_vert, size: 20),
-                        )
-                    ],
-                  )
-                ],
-              ),
-
-            const SizedBox(height: 8),
-            Text(
-              memory['raw_text'] ?? '',
-              style: const TextStyle(fontSize: 16),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    api.reminders.any((r) => r['memory_id'] == memoryId) ? Icons.alarm_on : Icons.add_alarm, 
-                    color: api.reminders.any((r) => r['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
-                    size: 20
-                  ),
-                  onPressed: () {
-                    if (!api.reminders.any((r) => r['memory_id'] == memoryId)) {
-                      _showManualReminderDialog(context, memoryId, api);
-                    }
-                  },
-                  tooltip: api.reminders.any((r) => r['memory_id'] == memoryId) ? 'Reminder added' : 'Add to Reminders',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 16),
-                IconButton(
-                  icon: Icon(
-                    api.transactions.any((t) => t['memory_id'] == memoryId) ? Icons.monetization_on : Icons.add_card, 
-                    color: api.transactions.any((t) => t['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
-                    size: 20
-                  ),
-                  onPressed: () {
-                    if (!api.transactions.any((t) => t['memory_id'] == memoryId)) {
-                      _showManualTransactionDialog(context, memoryId, api);
-                    }
-                  },
-                  tooltip: api.transactions.any((t) => t['memory_id'] == memoryId) ? 'Finance added' : 'Add to Finance',
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            )
-
-          ],
-        ),
-      ),
-      ),
-    );
-  }
-  void _showEditDialog(BuildContext context, dynamic memory, ApiProvider api) {
-    final TextEditingController editController = TextEditingController(text: memory['raw_text']);
-    showDialog(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Edit Note'),
-          content: TextField(
-            controller: editController,
-            maxLines: 5,
-            decoration: const InputDecoration(
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-              if (!_isSelectionMode)
-                IconButton(
-                  icon: const Icon(Icons.logout),
-                  onPressed: () async {
-                    await Supabase.instance.client.auth.signOut();
-                  },
-                ),
-
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final newText = editController.text.trim();
-                Navigator.pop(dialogContext);
-                if (newText.isNotEmpty && newText != memory['raw_text']) {
-                  final success = await api.updateMemory(memory['id'].toString(), newText);
-                  if (context.mounted) {
-                    if (success) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note updated successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update note.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
-                    }
-                  }
-                }
-              },
-              child: const Text('Save'),
-            ),
-          ],
         );
       }
     );
