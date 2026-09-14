@@ -247,17 +247,25 @@ class _RemindersScreenState extends State<RemindersScreen> {
                     ),
                   ],
                 ),
-                trailing: IconButton(
+                trailing: PopupMenuButton<String>(
                   icon: _getStatusIcon(item['status']),
-                  onPressed: () {
-                    String currentStatus = item['status'] ?? 'pending';
-                    String nextStatus;
-                    if (currentStatus == 'pending') nextStatus = 'sent';
-                    else if (currentStatus == 'sent') nextStatus = 'Not needed';
-                    else nextStatus = 'pending';
-                    
-                    api.updateReminderSettings(item['id'].toString(), item['is_completed'] == true, nextStatus);
+                  onSelected: (String newValue) {
+                    api.updateReminderSettings(item['id'].toString(), item['is_completed'] == true, newValue);
                   },
+                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'none',
+                      child: Row(children: [Icon(Icons.notifications_off, size: 20, color: Colors.grey), SizedBox(width: 8), Text('None')]),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'phone',
+                      child: Row(children: [Icon(Icons.smartphone, size: 20, color: Colors.blue), SizedBox(width: 8), Text('Phone Only')]),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'both',
+                      child: Row(children: [Icon(Icons.notifications_active, size: 20, color: Colors.green), SizedBox(width: 8), Text('Phone & Email')]),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -270,13 +278,27 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
   Widget _getStatusIcon(String? status) {
     switch (status) {
-      case 'sent':
-        return Icon(Icons.notifications_active, color: Theme.of(context).colorScheme.primary, size: 20);
+      case 'none':
       case 'Not needed':
         return const Icon(Icons.notifications_off, color: Colors.grey, size: 20);
+      case 'phone':
+        return const Icon(Icons.smartphone, color: Colors.blue, size: 20);
+      case 'both':
       case 'pending':
+        return const Icon(Icons.notifications_active, color: Colors.green, size: 20);
+      case 'sent_phone':
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.smartphone, color: Colors.green, size: 20),
+            Icon(Icons.check, color: Colors.green, size: 12),
+          ],
+        );
+      case 'sent_both':
+      case 'sent':
+        return const Icon(Icons.done_all, color: Colors.green, size: 20);
       default:
-        return const Icon(Icons.notifications, color: AppTheme.success, size: 20);
+        return const Icon(Icons.smartphone, color: Colors.blue, size: 20);
     }
   }
 
