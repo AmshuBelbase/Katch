@@ -199,52 +199,66 @@ class _RemindersScreenState extends State<RemindersScreen> {
           
           bool isOverdue = dueUtc.isBefore(DateTime.now().toUtc());
 
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: ListTile(
-              leading: Checkbox(
-                value: item['is_completed'] == true,
-                onChanged: (val) {
-                  if (val != null) {
-                    api.updateReminderSettings(item['id'].toString(), val, item['status'] ?? 'pending');
-                  }
-                },
-                activeColor: AppTheme.success,
-                checkColor: Theme.of(context).colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-              ),
-              title: Text(
-                item['task_name'],
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  decoration: item['is_completed'] == true ? TextDecoration.lineThrough : null,
-                  color: item['is_completed'] == true ? Colors.grey : Theme.of(context).colorScheme.onBackground,
+          return Dismissible(
+            key: Key(item['id'].toString()),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              color: AppTheme.errorColor(context),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20.0),
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            onDismissed: (direction) {
+              api.deleteReminder(item['id'].toString());
+            },
+            child: Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: ListTile(
+                leading: Checkbox(
+                  value: item['is_completed'] == true,
+                  onChanged: (val) {
+                    if (val != null) {
+                      api.updateReminderSettings(item['id'].toString(), val, item['status'] ?? 'pending');
+                    }
+                  },
+                  activeColor: AppTheme.success,
+                  checkColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                 ),
-              ),
-              subtitle: Row(
-                children: [
-                  Icon(Icons.calendar_today, size: 12, color: isOverdue ? AppTheme.error : Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    formattedDue,
-                    style: TextStyle(
-                      color: isOverdue ? AppTheme.error : Colors.grey,
-                      fontSize: 12,
-                    ),
+                title: Text(
+                  item['task_name'],
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    decoration: item['is_completed'] == true ? TextDecoration.lineThrough : null,
+                    color: item['is_completed'] == true ? Colors.grey : Theme.of(context).colorScheme.onSurface,
                   ),
-                ],
-              ),
-              trailing: IconButton(
-                icon: _getStatusIcon(item['status']),
-                onPressed: () {
-                  String currentStatus = item['status'] ?? 'pending';
-                  String nextStatus;
-                  if (currentStatus == 'pending') nextStatus = 'sent';
-                  else if (currentStatus == 'sent') nextStatus = 'Not needed';
-                  else nextStatus = 'pending';
-                  
-                  api.updateReminderSettings(item['id'].toString(), item['is_completed'] == true, nextStatus);
-                },
+                ),
+                subtitle: Row(
+                  children: [
+                    Icon(Icons.calendar_today, size: 12, color: isOverdue ? AppTheme.error : Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      formattedDue,
+                      style: TextStyle(
+                        color: isOverdue ? AppTheme.error : Colors.grey,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+                trailing: IconButton(
+                  icon: _getStatusIcon(item['status']),
+                  onPressed: () {
+                    String currentStatus = item['status'] ?? 'pending';
+                    String nextStatus;
+                    if (currentStatus == 'pending') nextStatus = 'sent';
+                    else if (currentStatus == 'sent') nextStatus = 'Not needed';
+                    else nextStatus = 'pending';
+                    
+                    api.updateReminderSettings(item['id'].toString(), item['is_completed'] == true, nextStatus);
+                  },
+                ),
               ),
             ),
           );

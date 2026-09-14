@@ -194,7 +194,7 @@ class ApiProvider extends ChangeNotifier {
 
   Future<void> _fetchMemoriesInternal() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/notes'), headers: _headers);
+      final response = await http.get(Uri.parse('$baseUrl/memories'), headers: _headers);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         memories = data['results'] ?? [];
@@ -378,7 +378,7 @@ class ApiProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/notes'),
+        Uri.parse('$baseUrl/memories'),
         headers: _headers,
         body: json.encode({'ids': ids}),
       );
@@ -537,6 +537,86 @@ class ApiProvider extends ChangeNotifier {
       chatHistory.add({"sender": "ai", "text": "Error: Could not reach the server."});
     }
     notifyListeners();
+  }
+
+  Future<bool> deleteReminder(String id) async {
+    await initFuture;
+    _setLoading(true);
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/reminders/$id'), headers: _headers);
+      if (response.statusCode == 200) {
+        await fetchReminders();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> deleteTransaction(String id) async {
+    await initFuture;
+    _setLoading(true);
+    try {
+      final response = await http.delete(Uri.parse('$baseUrl/transactions/$id'), headers: _headers);
+      if (response.statusCode == 200) {
+        await fetchTransactions();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> addManualReminder(Map<String, dynamic> data) async {
+    await initFuture;
+    _setLoading(true);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reminders/manual'),
+        headers: _headers,
+        body: json.encode(data)
+      );
+      if (response.statusCode == 200) {
+        await fetchReminders();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<bool> addManualTransaction(Map<String, dynamic> data) async {
+    await initFuture;
+    _setLoading(true);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/transactions/manual'),
+        headers: _headers,
+        body: json.encode(data)
+      );
+      if (response.statusCode == 200) {
+        await fetchTransactions();
+        return true;
+      }
+      return false;
+    } catch (e) {
+      error = e.toString();
+      return false;
+    } finally {
+      _setLoading(false);
+    }
   }
 
   // --- HELPER ---

@@ -285,19 +285,33 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 DateTime date = t['created_at'] != null ? DateTime.parse(t['created_at']).toLocal() : DateTime.now();
                 bool isIncome = t['transaction_type'] == 'income';
 
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  color: Theme.of(context).colorScheme.surface,
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: isIncome ? AppTheme.successColor(context).withOpacity(0.1) : AppTheme.errorColor(context).withOpacity(0.1),
-                      child: Icon(isIncome ? Icons.download : Icons.receipt_long, color: isIncome ? AppTheme.successColor(context) : AppTheme.errorColor(context)),
-                    ),
-                    title: Text(t['description'] ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('$cat • ${DateFormat('MMM d, h:mm a').format(date)}'),
-                    trailing: Text(
-                      '${isIncome ? '+' : '-'}${currencyFormatter.format(double.parse(t['amount'].toString()))}',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: isIncome ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontSize: 16),
+                return Dismissible(
+                  key: Key(t['id'].toString()),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    color: AppTheme.errorColor(context),
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20.0),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  onDismissed: (direction) {
+                    Provider.of<ApiProvider>(context, listen: false).deleteTransaction(t['id'].toString());
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    color: Theme.of(context).colorScheme.surface,
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: isIncome ? AppTheme.successColor(context).withValues(alpha: 0.1) : AppTheme.errorColor(context).withValues(alpha: 0.1),
+                        child: Icon(isIncome ? Icons.download : Icons.receipt_long, color: isIncome ? AppTheme.successColor(context) : AppTheme.errorColor(context)),
+                      ),
+                      title: Text(t['description'] ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text('$cat • ${DateFormat('MMM d, h:mm a').format(date)}'),
+                      trailing: Text(
+                        '${isIncome ? '+' : '-'}${currencyFormatter.format(double.parse(t['amount'].toString()))}',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: isIncome ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontSize: 16),
+                      ),
                     ),
                   ),
                 );
@@ -714,15 +728,28 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           bool isPositive = creditor.toLowerCase() == 'self';
           DateTime date = t['created_at'] != null ? DateTime.parse(t['created_at']).toLocal() : DateTime.now();
 
-          return Container(
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
-            child: ListTile(
-              dense: true,
-              title: Text(t['description'] ?? 'Transaction'),
-              subtitle: Text(DateFormat('MMM d, h:mm a').format(date)),
-              trailing: Text(
-                '${isPositive ? '+' : '-'}${currencyFormatter.format(amt)}',
-                style: TextStyle(color: isPositive ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold),
+          return Dismissible(
+            key: Key(t['id'].toString()),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              color: AppTheme.errorColor(context),
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 20.0),
+              child: const Icon(Icons.delete, color: Colors.white),
+            ),
+            onDismissed: (direction) {
+              Provider.of<ApiProvider>(context, listen: false).deleteTransaction(t['id'].toString());
+            },
+            child: Container(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+              child: ListTile(
+                dense: true,
+                title: Text(t['description'] ?? 'Transaction'),
+                subtitle: Text(DateFormat('MMM d, h:mm a').format(date)),
+                trailing: Text(
+                  '${isPositive ? '+' : '-'}${currencyFormatter.format(amt)}',
+                  style: TextStyle(color: isPositive ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           );
