@@ -5,6 +5,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiProvider extends ChangeNotifier {
+  Map<String, String> get _headers {
+    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    return {
+      'Content-Type': 'application/json',
+      if (token != null) 'Authorization': 'Bearer $token',
+    };
+  }
+
+  void _addAuthToMultipart(http.MultipartRequest request) {
+    final token = Supabase.instance.client.auth.currentSession?.accessToken;
+    if (token != null) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+  }
+
   String baseUrl = "http://127.0.0.1:8000/api";
   final String _localUrl = "http://127.0.0.1:8000/api";
   final String _cloudUrl = "https://memappbackend.onrender.com/api";
