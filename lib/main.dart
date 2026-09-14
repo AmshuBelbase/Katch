@@ -82,6 +82,8 @@ class VoiceMemoryApp extends StatelessWidget {
       title: 'Katch',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.system,
       home: const SplashScreen(),
     );
   }
@@ -153,7 +155,7 @@ class _DashboardShellState extends State<DashboardShell> {
           NavigationDestination(
             icon: Icon(Icons.view_agenda_outlined),
             selectedIcon: Icon(Icons.view_agenda),
-            label: 'Memories',
+            label: 'Notes',
           ),
           NavigationDestination(
             icon: Icon(Icons.auto_awesome_outlined),
@@ -163,7 +165,7 @@ class _DashboardShellState extends State<DashboardShell> {
           NavigationDestination(
             icon: Icon(Icons.access_time),
             selectedIcon: Icon(Icons.access_time_filled),
-            label: 'Tasks',
+            label: 'Reminders',
           ),
           NavigationDestination(
             icon: Icon(Icons.account_balance_wallet_outlined),

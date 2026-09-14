@@ -1,3 +1,5 @@
+import 'package:google_fonts/google_fonts.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/api_provider.dart';
@@ -12,10 +14,33 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  int _statusIndex = 0;
+  Timer? _timer;
+  final List<String> _loadingTexts = [
+    'Connecting to server...',
+    'Waking up AI...',
+    'Syncing notes...',
+    'Preparing your workspace...',
+    'Initializing KATCH...'
+  ];
+
   @override
   void initState() {
     super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 1500), (timer) {
+      if (mounted) {
+        setState(() {
+          _statusIndex = (_statusIndex + 1) % _loadingTexts.length;
+        });
+      }
+    });
     _navigateToNext();
+  }
+  
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _navigateToNext() async {
@@ -52,8 +77,10 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Consumer<ApiProvider>(
           builder: (context, api, child) {
@@ -63,33 +90,51 @@ class _SplashScreenState extends State<SplashScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Image.asset(
-                      'assets/katch_animation.gif',
-                      height: 180,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(
-                          Icons.memory,
-                          size: 100,
-                          color: AppTheme.primary,
-                        );
-                      },
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          isDark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
+                          height: 80,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.notes,
+                              size: 60,
+                              color: Theme.of(context).colorScheme.onBackground,
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 16),
+                        Text(
+                          'KATCH',
+                          style: GoogleFonts.michroma(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 64),
                     LinearProgressIndicator(
-                      backgroundColor: AppTheme.primary.withOpacity(0.1),
-                      valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
                       borderRadius: BorderRadius.circular(8),
                       minHeight: 6,
                     ),
                     const SizedBox(height: 24),
-                    Text(
-                      api.connectionStatus,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: AppTheme.secondary,
-                        fontWeight: FontWeight.w500,
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 500),
+                      child: Text(
+                        _loadingTexts[_statusIndex],
+                        key: ValueKey<int>(_statusIndex),
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Theme.of(context).colorScheme.secondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
                     ),
                   ],
                 ),

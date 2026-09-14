@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -77,25 +78,27 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                         });
                         if (context.mounted) {
                           if (success) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted $count memories successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted $count notes successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete memories.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete notes.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
                           }
                         }
                       },
                     ),
                   ]
-                : null,
+                : [
+                    
+                  ],
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                color: AppTheme.background,
+                color: Theme.of(context).scaffoldBackgroundColor,
                 padding: const EdgeInsets.only(top: 110, left: 16, right: 16),
                 child: Column(
                   children: [
                     TextField(
                       controller: _searchController,
                       decoration: InputDecoration(
-                        hintText: 'Search memories...',
+                        hintText: 'Search notes...',
                         prefixIcon: const Icon(Icons.search),
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.clear),
@@ -123,10 +126,10 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                         onSelected: (bool selected) {
                           setState(() => _filter = f);
                         },
-                        selectedColor: AppTheme.primary,
-                        checkmarkColor: Colors.white,
+                        selectedColor: Theme.of(context).colorScheme.primary,
+                        checkmarkColor: Theme.of(context).colorScheme.onPrimary,
                         labelStyle: TextStyle(
-                          color: _filter == f ? Colors.white : Colors.black87,
+                          color: _filter == f ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onBackground,
                           fontWeight: _filter == f ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
@@ -210,7 +213,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
               if (displayMemories.isEmpty) {
                 return const SliverFillRemaining(
-                  child: Center(child: Text("No memories found.")),
+                  child: Center(child: Text("No notes found.")),
                 );
               }
               
@@ -270,9 +273,9 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,7 +290,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 )
               else if (memories.isEmpty && _searchController.text.isEmpty)
                 const Text(
-                  'Record a Katch Memory',
+                  'Record a KATCH Note',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 )
               else
@@ -296,7 +299,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
               Text(
-                '$totalMemories memories',
+                '$totalMemories notes',
                 style: const TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
@@ -366,8 +369,8 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                       BarChartRodData(
                         toY: activityCounts[index].toDouble(),
                         color: anySelected 
-                            ? (isSelected ? AppTheme.primary : Colors.grey.withOpacity(0.3))
-                            : AppTheme.primary.withOpacity(0.8),
+                            ? (isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.withOpacity(0.3))
+                            : Theme.of(context).colorScheme.primary.withOpacity(0.8),
                         width: 12,
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -393,7 +396,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     bool isSelected = _selectedMemoryIds.contains(memoryId);
 
     return Card(
-      color: isSelected ? AppTheme.primary.withOpacity(0.1) : AppTheme.surface,
+      color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Theme.of(context).colorScheme.surface,
       child: InkWell(
         onLongPress: () {
           setState(() {
@@ -466,9 +469,9 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                               final success = await api.deleteMemory(memoryId);
                               if (context.mounted) {
                                 if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Memory deleted.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note deleted.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
                                 } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete memory.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete note.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
                                 }
                               }
                             } else if (val == 'edit') {
@@ -504,7 +507,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Edit Memory'),
+          title: const Text('Edit Note'),
           content: TextField(
             controller: editController,
             maxLines: 5,
@@ -533,9 +536,9 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   final success = await api.updateMemory(memory['id'].toString(), newText);
                   if (context.mounted) {
                     if (success) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Memory updated successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note updated successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update memory.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update note.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
                     }
                   }
                 }

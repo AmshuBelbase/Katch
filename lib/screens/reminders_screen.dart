@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -41,7 +42,20 @@ class _RemindersScreenState extends State<RemindersScreen> {
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Tasks & Reminders', style: TextStyle(fontWeight: FontWeight.bold)),
+          actions: [
+            
+          ],
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
+              height: 24,
+            ),
+            const SizedBox(width: 8),
+            Text('KATCH', style: GoogleFonts.michroma(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).colorScheme.primary)),
+          ],
+        ),
       ),
       body: Consumer<ApiProvider>(
         builder: (context, api, child) {
@@ -138,7 +152,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 _buildList(inAnHour, api),
                 
               if (today.isNotEmpty)
-                _buildSectionHeader('Today', AppTheme.primary),
+                _buildSectionHeader('Today', Theme.of(context).colorScheme.primary),
               if (today.isNotEmpty)
                 _buildList(today, api),
                 
@@ -196,7 +210,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                   }
                 },
                 activeColor: AppTheme.success,
-                checkColor: Colors.white,
+                checkColor: Theme.of(context).colorScheme.onPrimary,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               ),
               title: Text(
@@ -204,7 +218,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 style: TextStyle(
                   fontWeight: FontWeight.w500,
                   decoration: item['is_completed'] == true ? TextDecoration.lineThrough : null,
-                  color: item['is_completed'] == true ? Colors.grey : Colors.black87,
+                  color: item['is_completed'] == true ? Colors.grey : Theme.of(context).colorScheme.onBackground,
                 ),
               ),
               subtitle: Row(
@@ -243,7 +257,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
   Widget _getStatusIcon(String? status) {
     switch (status) {
       case 'sent':
-        return const Icon(Icons.notifications_active, color: AppTheme.primary, size: 20);
+        return Icon(Icons.notifications_active, color: Theme.of(context).colorScheme.primary, size: 20);
       case 'Not needed':
         return const Icon(Icons.notifications_off, color: Colors.grey, size: 20);
       case 'pending':
@@ -294,9 +308,9 @@ class _TaskCalendarState extends State<TaskCalendar> {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -404,12 +418,12 @@ class _TaskCalendarState extends State<TaskCalendar> {
                 child: Container(
                   decoration: BoxDecoration(
                     color: isSelected 
-                        ? AppTheme.primary
-                        : (showOverdueBackground ? AppTheme.error.withOpacity(0.1) : (isToday ? AppTheme.primary.withOpacity(0.1) : Colors.transparent)),
+                        ? Theme.of(context).colorScheme.primary
+                        : (showOverdueBackground ? AppTheme.error.withOpacity(0.1) : (isToday ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Colors.transparent)),
                     borderRadius: BorderRadius.circular(8),
                     border: isSelected 
-                        ? Border.all(color: AppTheme.primary, width: 2)
-                        : (isToday ? Border.all(color: AppTheme.primary, width: 1.5) : Border.all(color: Colors.black.withOpacity(0.05))),
+                        ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
+                        : (isToday ? Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5) : Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1))),
                   ),
                 child: Stack(
                   children: [
@@ -421,7 +435,7 @@ class _TaskCalendarState extends State<TaskCalendar> {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: (isToday || isSelected) ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Colors.white : (isToday ? AppTheme.primary : Colors.black87),
+                          color: isSelected ? Theme.of(context).colorScheme.onPrimary : (isToday ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onBackground),
                         ),
                       ),
                     ),
@@ -432,12 +446,12 @@ class _TaskCalendarState extends State<TaskCalendar> {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : (showOverdueBackground ? AppTheme.error : AppTheme.primary),
+                            color: isSelected ? Theme.of(context).colorScheme.onPrimary : (showOverdueBackground ? AppTheme.error : Theme.of(context).colorScheme.primary),
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
                             taskCount.toString(),
-                            style: TextStyle(color: isSelected ? AppTheme.primary : Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.bold),
                           ),
                         ),
                       )

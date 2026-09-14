@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/api_provider.dart';
@@ -46,7 +47,20 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('AI Assistant', style: TextStyle(fontWeight: FontWeight.bold)),
+          actions: [
+            
+          ],
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
+              height: 24,
+            ),
+            const SizedBox(width: 8),
+            Text('KATCH', style: GoogleFonts.michroma(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).colorScheme.primary)),
+          ],
+        ),
       ),
       body: Column(
         children: [
@@ -61,10 +75,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: ActionChip(
                     label: Text(s),
                     onPressed: () => _sendMessage(s),
-                    backgroundColor: AppTheme.primary.withOpacity(0.1),
+                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     side: BorderSide.none,
-                    labelStyle: const TextStyle(
-                      color: Colors.black87,
+                    labelStyle: TextStyle(
+                      color: Theme.of(context).colorScheme.onBackground,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -80,8 +94,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (api.chatHistory.isEmpty) {
                   return Center(
                     child: Text(
-                      'Ask me anything about your memories, finances, or tasks.',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      'Ask me anything about your notes, finances, or reminders.',
+                      style: const TextStyle(color: Colors.grey),
                       textAlign: TextAlign.center,
                     ),
                   );
@@ -104,19 +118,19 @@ class _ChatScreenState extends State<ChatScreen> {
                           maxWidth: MediaQuery.of(context).size.width * 0.75,
                         ),
                         decoration: BoxDecoration(
-                          color: isUser ? AppTheme.primary : AppTheme.surface,
+                          color: isUser ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.only(
                             topLeft: const Radius.circular(16),
                             topRight: const Radius.circular(16),
                             bottomLeft: Radius.circular(isUser ? 16 : 4),
                             bottomRight: Radius.circular(isUser ? 4 : 16),
                           ),
-                          border: isUser ? null : Border.all(color: Colors.black.withOpacity(0.05)),
+                          border: isUser ? null : Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
                         ),
                         child: Text(
                           msg['text'] ?? '',
                           style: TextStyle(
-                            color: isUser ? Colors.white : Colors.black87,
+                            color: isUser ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onBackground,
                             fontSize: 15,
                           ),
                         ),
@@ -132,10 +146,10 @@ class _ChatScreenState extends State<ChatScreen> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.surface,
+              color: Theme.of(context).colorScheme.surface,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
                   blurRadius: 10,
                   offset: const Offset(0, -5),
                 )
@@ -155,9 +169,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const SizedBox(width: 12),
                 CircleAvatar(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white, size: 20),
+                    icon: Icon(Icons.send, color: Theme.of(context).colorScheme.onPrimary, size: 20),
                     onPressed: () => _sendMessage(_messageController.text),
                   ),
                 )

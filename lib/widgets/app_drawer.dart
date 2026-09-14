@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme.dart';
@@ -8,40 +9,64 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    final userName = user?.userMetadata?['name'] as String? ?? 'User';
+    final userEmail = user?.email ?? '';
+    final avatarUrl = user?.userMetadata?['avatar_url'] as String?;
+    
     return Drawer(
-      backgroundColor: AppTheme.background,
-      child: ListView(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
         padding: EdgeInsets.zero,
         children: [
           DrawerHeader(
-            decoration: const BoxDecoration(
-              color: AppTheme.primary,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Image.asset(
-                  'assets/katch_logo.png',
-                  height: 48,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.memory, size: 48, color: AppTheme.primary);
-                  },
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
+                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                  child: avatarUrl == null
+                      ? Text(
+                          userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      : null,
                 ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Katch',
+                const SizedBox(height: 12),
+                Text(
+                  userName,
                   style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                if (userEmail.isNotEmpty)
+                  Text(
+                    userEmail,
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
+                      fontSize: 14,
+                    ),
+                  ),
               ],
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.settings, color: AppTheme.primary),
+            leading: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
             title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.w500)),
             onTap: () {
               Navigator.pop(context); // Close drawer
@@ -52,11 +77,37 @@ class AppDrawer extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.logout, color: AppTheme.primary),
+            leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.primary),
             title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w500)),
             onTap: () async {
               await Supabase.instance.client.auth.signOut();
             },
+          ),
+        ],
+      ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
+                          height: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text('KATCH', style: GoogleFonts.michroma(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text('Developed by AMSHU BELBASE', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const Text('© 2026', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  ],
+              ),
+            ),
           ),
         ],
       ),

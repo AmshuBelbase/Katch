@@ -194,7 +194,7 @@ class ApiProvider extends ChangeNotifier {
 
   Future<void> _fetchMemoriesInternal() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/memories'), headers: _headers);
+      final response = await http.get(Uri.parse('$baseUrl/notes'), headers: _headers);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         memories = data['results'] ?? [];
@@ -378,7 +378,7 @@ class ApiProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/memories'),
+        Uri.parse('$baseUrl/notes'),
         headers: _headers,
         body: json.encode({'ids': ids}),
       );

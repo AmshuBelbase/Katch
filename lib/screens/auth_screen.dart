@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -90,7 +91,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -98,40 +99,45 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  'assets/katch_logo.png',
-                  height: 100,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.memory,
-                      size: 80,
-                      color: AppTheme.primary,
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Katch',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.primary,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
+                        height: 48,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Icon(
+                            Icons.notes,
+                            size: 40,
+                            color: Theme.of(context).colorScheme.primary,
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 16),
+                      Text(
+                        'KATCH',
+                        style: GoogleFonts.michroma(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
                 const SizedBox(height: 48),
                 TextField(
                   controller: _emailController,
                   decoration: InputDecoration(
                     hintText: 'Email',
                     filled: true,
-                    fillColor: Colors.black.withOpacity(0.03),
+                    fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: const Icon(Icons.email, color: Colors.grey),
                   ),
-                  style: const TextStyle(color: Colors.black87),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
@@ -140,14 +146,14 @@ class _AuthScreenState extends State<AuthScreen> {
                   decoration: InputDecoration(
                     hintText: 'Password',
                     filled: true,
-                    fillColor: Colors.black.withOpacity(0.03),
+                    fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: const Icon(Icons.lock, color: Colors.grey),
                   ),
-                  style: const TextStyle(color: Colors.black87),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                   obscureText: true,
                 ),
                 const SizedBox(height: 24),
@@ -160,13 +166,13 @@ class _AuthScreenState extends State<AuthScreen> {
                       ElevatedButton(
                         onPressed: _signIn,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primary,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('Login', style: TextStyle(fontSize: 16, color: Colors.white)),
+                        child: Text('Login', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary)),
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton(
@@ -178,12 +184,12 @@ class _AuthScreenState extends State<AuthScreen> {
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          side: const BorderSide(color: AppTheme.primary),
+                          side: BorderSide(color: Theme.of(context).colorScheme.primary),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('Create Account', style: TextStyle(fontSize: 16, color: AppTheme.primary)),
+                        child: Text('Create Account', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary)),
                       ),
                       const SizedBox(height: 24),
                       const Row(
@@ -199,10 +205,10 @@ class _AuthScreenState extends State<AuthScreen> {
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
                         onPressed: _googleSignIn,
-                        icon: const Icon(Icons.g_mobiledata, size: 32, color: Colors.white),
-                        label: const Text('Continue with Google', style: TextStyle(fontSize: 16, color: Colors.white)),
+                        icon: Icon(Icons.g_mobiledata, size: 32, color: Theme.of(context).colorScheme.onPrimary),
+                        label: Text('Continue with Google', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppTheme.primary,
+                          backgroundColor: Theme.of(context).colorScheme.primary,
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),

@@ -83,11 +83,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: AppTheme.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.primary),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
       ),
       body: SafeArea(
         child: Center(
@@ -98,23 +98,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Image.asset(
-                  'assets/katch_logo.png',
+                  Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
                   height: 100,
                   errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
+                    return Icon(
                       Icons.person_add_alt_1_rounded,
                       size: 80,
-                      color: AppTheme.primary,
+                      color: Theme.of(context).colorScheme.primary,
                     );
                   },
                 ),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Create Account',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -124,14 +124,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   decoration: InputDecoration(
                     hintText: 'Full Name',
                     filled: true,
-                    fillColor: Colors.black.withOpacity(0.03),
+                    fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: const Icon(Icons.person, color: Colors.grey),
                   ),
-                  style: const TextStyle(color: Colors.black87),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                   keyboardType: TextInputType.name,
                 ),
                 const SizedBox(height: 16),
@@ -140,14 +140,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   decoration: InputDecoration(
                     hintText: 'Email',
                     filled: true,
-                    fillColor: Colors.black.withOpacity(0.03),
+                    fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: const Icon(Icons.email, color: Colors.grey),
                   ),
-                  style: const TextStyle(color: Colors.black87),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 16),
@@ -156,14 +156,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   decoration: InputDecoration(
                     hintText: 'Password',
                     filled: true,
-                    fillColor: Colors.black.withOpacity(0.03),
+                    fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: const Icon(Icons.lock, color: Colors.grey),
                   ),
-                  style: const TextStyle(color: Colors.black87),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                   obscureText: true,
                 ),
                 const SizedBox(height: 16),
@@ -172,14 +172,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   decoration: InputDecoration(
                     hintText: 'Confirm Password',
                     filled: true,
-                    fillColor: Colors.black.withOpacity(0.03),
+                    fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: const Icon(Icons.lock_outline, color: Colors.grey),
                   ),
-                  style: const TextStyle(color: Colors.black87),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onBackground),
                   obscureText: true,
                 ),
                 const SizedBox(height: 32),
@@ -189,13 +189,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ElevatedButton(
                     onPressed: _signUp,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.primary,
+                      backgroundColor: Theme.of(context).colorScheme.primary,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Sign Up', style: TextStyle(fontSize: 16, color: Colors.white)),
+                    child: Text('Sign Up', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary)),
                   ),
                 const SizedBox(height: 24),
               ],

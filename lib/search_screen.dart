@@ -33,14 +33,14 @@ class _SearchScreenState extends State<SearchScreen> {
 
     try {
       final apiUrl = await ApiClient().getWorkingUrl();
-      final response = await http.get(Uri.parse('$apiUrl/memories')).timeout(const Duration(seconds: 10));
+      final response = await http.get(Uri.parse('$apiUrl/notes')).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
           _searchResults = data['results'] ?? [];
           if (_searchResults.isEmpty) {
-            _errorMessage = 'No memories found. Go record some!';
+            _errorMessage = 'No notes found. Go record some!';
           }
         });
       } else {
@@ -79,7 +79,7 @@ class _SearchScreenState extends State<SearchScreen> {
         setState(() {
           _searchResults = data['results'] ?? [];
           if (_searchResults.isEmpty) {
-            _errorMessage = 'No matching memories found.';
+            _errorMessage = 'No matching notes found.';
           }
         });
       } else {
@@ -117,7 +117,7 @@ class _SearchScreenState extends State<SearchScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Edit Memory'),
+          title: const Text('Edit Note'),
           content: TextField(
             controller: editController,
             maxLines: 3,
@@ -165,7 +165,7 @@ class _SearchScreenState extends State<SearchScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.edit, color: Colors.blue),
-                title: const Text('Edit Memory'),
+                title: const Text('Edit Note'),
                 onTap: () {
                   Navigator.pop(context);
                   _editMemory(id, index, currentText);
@@ -206,7 +206,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
-                    hintText: 'Search past memories...',
+                    hintText: 'Search past notes...',
                     prefixIcon: const Icon(Icons.search),
                     // Clear button that triggers a reset
                     suffixIcon: IconButton(
@@ -263,7 +263,7 @@ class _SearchScreenState extends State<SearchScreen> {
                         subtitleText, 
                         style: TextStyle(color: similarityScore != null ? Colors.green : Colors.grey)
                       ),
-                      leading: const CircleAvatar(child: Icon(Icons.memory)),
+                      leading: const CircleAvatar(child: Icon(Icons.notes)),
                       trailing: const Icon(Icons.more_vert),
                       onTap: () => _showOptions(memoryId, index, rawText),
                     ),

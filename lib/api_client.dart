@@ -27,7 +27,7 @@ class ApiClient {
     try {
       print('Attempting to connect to Local Fallback Backend...');
       final response = await http
-          .get(Uri.parse('$localUrl/memories'))
+          .get(Uri.parse('$localUrl/notes'))
           .timeout(const Duration(seconds: 15)); // Increased to 15s
           
       if (response.statusCode == 200) {
@@ -43,7 +43,7 @@ class ApiClient {
     try {
       print('Attempting to connect to Cloud Backend...');
       final response = await http
-          .get(Uri.parse('$cloudUrl/memories'))
+          .get(Uri.parse('$cloudUrl/notes'))
           .timeout(const Duration(seconds: 30)); // Increased to 30s to allow Render to wake up
           
       if (response.statusCode == 200) {

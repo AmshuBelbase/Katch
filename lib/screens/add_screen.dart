@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:record/record.dart';
@@ -127,7 +128,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Failed to save memory.'),
+            content: const Text('Failed to save note.'),
             backgroundColor: AppTheme.error,
             behavior: SnackBarBehavior.floating,
           ),
@@ -141,20 +142,31 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Capture', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
+              height: 24,
+            ),
+            const SizedBox(width: 8),
+            Text('KATCH', style: GoogleFonts.michroma(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).colorScheme.primary)),
+          ],
+        ),
         actions: [
           TextButton.icon(
-            icon: const Icon(Icons.logout, color: Colors.white70),
-            label: const Text('Sign Out', style: TextStyle(color: Colors.white70)),
+            icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7)),
+            label: Text('Sign Out', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7))),
             onPressed: () async {
               await Supabase.instance.client.auth.signOut();
             },
           ),
+          
         ],
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: AppTheme.primary,
-          labelColor: AppTheme.primary,
+          indicatorColor: Theme.of(context).colorScheme.primary,
+          labelColor: Theme.of(context).colorScheme.primary,
           unselectedLabelColor: Colors.grey,
           tabs: const [
             Tab(icon: Icon(Icons.mic), text: 'Voice'),
@@ -183,7 +195,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
           ),
           const SizedBox(height: 40),
           if (_isProcessing)
-            const CircularProgressIndicator(color: AppTheme.primary)
+            CircularProgressIndicator(color: Theme.of(context).colorScheme.primary)
           else if (_isRecording)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -198,7 +210,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
                       width: 8,
                       height: height.abs(),
                       decoration: BoxDecoration(
-                        color: AppTheme.primary,
+                        color: Theme.of(context).colorScheme.primary,
                         borderRadius: BorderRadius.circular(4),
                       ),
                     );
@@ -224,7 +236,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
                     padding: EdgeInsets.all(_isRecording ? 8.0 + (_pulseController.value * 8) : 8.0),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppTheme.primary.withOpacity(_isRecording ? 0.2 : 0.0),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(_isRecording ? 0.2 : 0.0),
                     ),
                     child: FloatingActionButton.large(
                       onPressed: () {
@@ -234,7 +246,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
                           _startRecording();
                         }
                       },
-                      backgroundColor: _isRecording ? AppTheme.error : AppTheme.primary,
+                      backgroundColor: _isRecording ? AppTheme.error : Theme.of(context).colorScheme.primary,
                       child: Icon(_isRecording ? Icons.stop : Icons.mic, size: 36),
                     ),
                   );
@@ -249,7 +261,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
             )
           else
             Text(
-              _isRecording ? 'Tap to stop recording' : 'Tap to start recording',
+              _isRecording ? 'Tap to stop recording' : 'Tap to record a voice note',
               style: const TextStyle(color: Colors.grey),
             ),
         ],
@@ -296,9 +308,9 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
                     child: FilledButton.icon(
                       onPressed: api.isLoading ? null : _saveTextMemory,
                       icon: api.isLoading 
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary))
                         : const Icon(Icons.save),
-                      label: const Text('Save Memory'),
+                      label: const Text('Save Note'),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -319,7 +331,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Katch Memory Saved'),
+          title: Text('KATCH Note Saved', style: GoogleFonts.michroma()),
           content: Text(transcribedText),
           actions: [
             TextButton(
@@ -329,7 +341,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
                 if (id != null) {
                   api.deleteMemory(id);
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Memory discarded')));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note discarded')));
                   }
                 }
               },
@@ -362,7 +374,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Edit Katch Memory'),
+          title: Text('Edit KATCH Note', style: GoogleFonts.michroma()),
           content: TextField(
             controller: editController,
             maxLines: 5,

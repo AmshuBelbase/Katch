@@ -67,12 +67,12 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Verify Email'),
-        backgroundColor: AppTheme.background,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppTheme.primary),
+        iconTheme: IconThemeData(color: Theme.of(context).colorScheme.primary),
       ),
       body: SafeArea(
         child: Padding(
@@ -82,22 +82,22 @@ class _OtpScreenState extends State<OtpScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Image.asset(
-                'assets/katch_logo.png',
+                Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
                 height: 100,
                 errorBuilder: (context, error, stackTrace) {
-                  return const Icon(Icons.mark_email_unread, size: 80, color: AppTheme.primary);
+                  return Icon(Icons.mark_email_unread, size: 80, color: Theme.of(context).colorScheme.primary);
                 },
               ),
               const SizedBox(height: 24),
-              const Text(
+              Text(
                 'Enter Verification Code',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppTheme.primary),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
               Text(
                 'A verification code has been sent to\n${widget.email}',
-                style: const TextStyle(fontSize: 16, color: Colors.black87),
+                style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onBackground),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 48),
@@ -106,14 +106,14 @@ class _OtpScreenState extends State<OtpScreen> {
                 decoration: InputDecoration(
                   hintText: 'Code',
                   filled: true,
-                  fillColor: Colors.black.withOpacity(0.03),
+                  fillColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
                   prefixIcon: const Icon(Icons.password, color: Colors.grey),
                 ),
-                style: const TextStyle(color: Colors.black87, fontSize: 24, letterSpacing: 8),
+                style: TextStyle(color: Theme.of(context).colorScheme.onBackground, fontSize: 24, letterSpacing: 8),
                 keyboardType: TextInputType.number,
                 textAlign: TextAlign.center,
                 maxLength: 10,
@@ -125,13 +125,13 @@ class _OtpScreenState extends State<OtpScreen> {
                 ElevatedButton(
                   onPressed: _verifyOTP,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Verify', style: TextStyle(fontSize: 16, color: Colors.white)),
+                  child: Text('Verify', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onPrimary)),
                 ),
             ],
           ),

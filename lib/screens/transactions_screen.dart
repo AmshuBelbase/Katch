@@ -1,3 +1,4 @@
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -138,13 +139,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             child: Container(
                               margin: const EdgeInsets.all(4),
                               decoration: BoxDecoration(
-                                color: isSelected ? AppTheme.primary : Colors.transparent,
+                                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               alignment: Alignment.center,
                               child: Text(
                                 DateFormat('MMM').format(DateTime(2020, index + 1)),
-                                style: TextStyle(color: isSelected ? Colors.white : Colors.black87),
+                                style: TextStyle(color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onBackground),
                               ),
                             ),
                           );
@@ -175,10 +176,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return FilterChip(
       label: Text(displayLabel),
       selected: isSelected,
-      selectedColor: AppTheme.primary,
-      checkmarkColor: Colors.white,
+      selectedColor: Theme.of(context).colorScheme.primary,
+      checkmarkColor: Theme.of(context).colorScheme.onPrimary,
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : Colors.black87,
+        color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onBackground,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
       ),
       onSelected: (selected) async {
@@ -286,17 +287,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
                 return Card(
                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  color: AppTheme.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: isIncome ? AppTheme.success.withOpacity(0.1) : AppTheme.error.withOpacity(0.1),
-                      child: Icon(isIncome ? Icons.download : Icons.receipt_long, color: isIncome ? AppTheme.success : AppTheme.error),
+                      backgroundColor: isIncome ? AppTheme.successColor(context).withOpacity(0.1) : AppTheme.errorColor(context).withOpacity(0.1),
+                      child: Icon(isIncome ? Icons.download : Icons.receipt_long, color: isIncome ? AppTheme.successColor(context) : AppTheme.errorColor(context)),
                     ),
                     title: Text(t['description'] ?? 'Transaction', style: const TextStyle(fontWeight: FontWeight.bold)),
                     subtitle: Text('$cat • ${DateFormat('MMM d, h:mm a').format(date)}'),
                     trailing: Text(
                       '${isIncome ? '+' : '-'}${currencyFormatter.format(double.parse(t['amount'].toString()))}',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: isIncome ? AppTheme.success : AppTheme.error, fontSize: 16),
+                      style: TextStyle(fontWeight: FontWeight.bold, color: isIncome ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontSize: 16),
                     ),
                   ),
                 );
@@ -314,11 +315,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -327,7 +328,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           const SizedBox(height: 8),
           Text(
             currencyFormatter.format(netBalance), 
-            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: netBalance >= 0 ? AppTheme.success : AppTheme.error)
+            style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: netBalance >= 0 ? AppTheme.successColor(context) : AppTheme.errorColor(context))
           ),
           const SizedBox(height: 32),
           _buildCashFlowBar(totalIncome, totalExpense),
@@ -335,8 +336,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Income: ${currencyFormatter.format(totalIncome)}', style: const TextStyle(color: AppTheme.success, fontWeight: FontWeight.bold)),
-              Text('Expense: ${currencyFormatter.format(totalExpense)}', style: const TextStyle(color: AppTheme.error, fontWeight: FontWeight.bold)),
+              Text('Income: ${currencyFormatter.format(totalIncome)}', style: TextStyle(color: AppTheme.successColor(context), fontWeight: FontWeight.bold)),
+              Text('Expense: ${currencyFormatter.format(totalExpense)}', style: TextStyle(color: AppTheme.errorColor(context), fontWeight: FontWeight.bold)),
             ]
           )
         ]
@@ -362,7 +363,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             child: Container(
               height: 12, 
               decoration: BoxDecoration(
-                color: AppTheme.success, 
+                color: AppTheme.successColor(context), 
                 borderRadius: expenseFlex == 0 ? BorderRadius.circular(6) : const BorderRadius.only(topLeft: Radius.circular(6), bottomLeft: Radius.circular(6))
               )
             )
@@ -373,7 +374,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             child: Container(
               height: 12, 
               decoration: BoxDecoration(
-                color: AppTheme.error, 
+                color: AppTheme.errorColor(context), 
                 borderRadius: incomeFlex == 0 ? BorderRadius.circular(6) : const BorderRadius.only(topRight: Radius.circular(6), bottomRight: Radius.circular(6))
               )
             )
@@ -387,9 +388,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppTheme.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.black.withOpacity(0.05)),
+        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -410,7 +411,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     List<PieChartSectionData> sections = [];
     int i = 0;
-    List<Color> colors = [AppTheme.primary, AppTheme.secondary, AppTheme.tertiary, AppTheme.warning, AppTheme.error, Colors.purple, Colors.teal];
+    List<Color> colors = [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary, Theme.of(context).colorScheme.tertiary, AppTheme.warning, AppTheme.errorColor(context), Colors.purple, Colors.teal];
     
     List<Widget> legendItems = [];
 
@@ -470,7 +471,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   Widget _buildHorizontalCategoryBar(Map<String, double> categoryTotals, double totalExpense) {
     if (categoryTotals.isEmpty || totalExpense == 0) return const SizedBox(height: 100, child: Center(child: Text("No expense data.")));
 
-    List<Color> colors = [AppTheme.primary, AppTheme.secondary, AppTheme.tertiary, AppTheme.warning, AppTheme.error, Colors.purple, Colors.teal];
+    List<Color> colors = [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.secondary, Theme.of(context).colorScheme.tertiary, AppTheme.warning, AppTheme.errorColor(context), Colors.purple, Colors.teal];
     
     List<Widget> barSegments = [];
     List<Widget> legendItems = [];
@@ -572,11 +573,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
             child: Row(
               children: [
-                Expanded(child: _buildKPICard('Balance', netBalance, netBalance >= 0 ? AppTheme.success : AppTheme.error)),
+                Expanded(child: _buildKPICard('Balance', netBalance, netBalance >= 0 ? AppTheme.successColor(context) : AppTheme.errorColor(context))),
                 const SizedBox(width: 8),
-                Expanded(child: _buildKPICard('Owed to You', totalInflow, AppTheme.success)),
+                Expanded(child: _buildKPICard('Owed to You', totalInflow, AppTheme.successColor(context))),
                 const SizedBox(width: 8),
-                Expanded(child: _buildKPICard('You Owe', totalOutflow, AppTheme.error)),
+                Expanded(child: _buildKPICard('You Owe', totalOutflow, AppTheme.errorColor(context))),
               ],
             ),
           ),
@@ -587,9 +588,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.surface,
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.black.withOpacity(0.05)),
+              border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
             ),
             child: _buildSplitwiseBarChart(personBalances),
           ),
@@ -640,7 +641,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
         barRods: [
           BarChartRodData(
             toY: balance,
-            color: balance >= 0 ? AppTheme.success : AppTheme.error,
+            color: balance >= 0 ? AppTheme.successColor(context) : AppTheme.errorColor(context),
             width: 16,
             borderRadius: BorderRadius.circular(4),
           ),
@@ -682,7 +683,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
           topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
         ),
-        borderData: FlBorderData(show: true, border: Border(bottom: BorderSide(color: Colors.black.withOpacity(0.1)))),
+        borderData: FlBorderData(show: true, border: Border(bottom: BorderSide(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.15)))),
         gridData: FlGridData(show: false),
         barGroups: barGroups,
       ),
@@ -695,17 +696,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      color: AppTheme.surface,
+      color: Theme.of(context).colorScheme.surface,
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
         leading: CircleAvatar(
-          backgroundColor: owesYou ? AppTheme.success.withOpacity(0.1) : AppTheme.error.withOpacity(0.1),
-          child: Text(person.isNotEmpty ? person[0].toUpperCase() : '?', style: TextStyle(color: owesYou ? AppTheme.success : AppTheme.error, fontWeight: FontWeight.bold)),
+          backgroundColor: owesYou ? AppTheme.successColor(context).withOpacity(0.1) : AppTheme.errorColor(context).withOpacity(0.1),
+          child: Text(person.isNotEmpty ? person[0].toUpperCase() : '?', style: TextStyle(color: owesYou ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold)),
         ),
         title: Text(person, style: const TextStyle(fontWeight: FontWeight.bold)),
         subtitle: Text(
           owesYou ? 'Owes you ${currencyFormatter.format(balance)}' : 'You owe ${currencyFormatter.format(balance.abs())}',
-          style: TextStyle(color: owesYou ? AppTheme.success : AppTheme.error, fontWeight: FontWeight.bold),
+          style: TextStyle(color: owesYou ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold),
         ),
         children: history.map((t) {
           double amt = double.parse(t['amount'].toString());
@@ -714,14 +715,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           DateTime date = t['created_at'] != null ? DateTime.parse(t['created_at']).toLocal() : DateTime.now();
 
           return Container(
-            color: Colors.black.withOpacity(0.02),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.05),
             child: ListTile(
               dense: true,
               title: Text(t['description'] ?? 'Transaction'),
               subtitle: Text(DateFormat('MMM d, h:mm a').format(date)),
               trailing: Text(
                 '${isPositive ? '+' : '-'}${currencyFormatter.format(amt)}',
-                style: TextStyle(color: isPositive ? AppTheme.success : AppTheme.error, fontWeight: FontWeight.bold),
+                style: TextStyle(color: isPositive ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold),
               ),
             ),
           );
@@ -735,13 +736,24 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Finances', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset(
+              Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
+              height: 24,
+            ),
+            const SizedBox(width: 8),
+            Text('KATCH', style: GoogleFonts.michroma(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).colorScheme.primary)),
+          ],
+        ),
         actions: [
           if (_currentMode == 0)
             IconButton(
               icon: Icon(_showChart ? Icons.bar_chart : Icons.pie_chart),
               onPressed: () => setState(() => _showChart = !_showChart),
-            )
+            ),
+          
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
@@ -764,15 +776,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     style: ButtonStyle(
                       backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
                         if (states.contains(WidgetState.selected)) {
-                          return AppTheme.primary;
+                          return Theme.of(context).colorScheme.primary;
                         }
-                        return AppTheme.surface;
+                        return Theme.of(context).colorScheme.surface;
                       }),
                       foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
                         if (states.contains(WidgetState.selected)) {
-                          return Colors.white;
+                          return Theme.of(context).colorScheme.onPrimary;
                         }
-                        return Colors.black87;
+                        return Theme.of(context).colorScheme.onBackground;
                       }),
                     ),
                   ),
