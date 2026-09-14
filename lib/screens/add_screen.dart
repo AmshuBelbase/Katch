@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:record/record.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import '../providers/api_provider.dart';
 import '../theme.dart';
+import '../widgets/app_drawer.dart';
 import 'dart:math';
 
 class AddScreen extends StatefulWidget {
@@ -137,8 +139,18 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Capture', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          TextButton.icon(
+            icon: const Icon(Icons.logout, color: Colors.white70),
+            label: const Text('Sign Out', style: TextStyle(color: Colors.white70)),
+            onPressed: () async {
+              await Supabase.instance.client.auth.signOut();
+            },
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppTheme.primary,

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'dart:math';
 import '../providers/api_provider.dart';
 import '../theme.dart';
+import '../widgets/app_drawer.dart';
 
 class MemoriesScreen extends StatefulWidget {
   const MemoriesScreen({super.key});
@@ -43,6 +44,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(

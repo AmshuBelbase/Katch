@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../providers/api_provider.dart';
 import '../theme.dart';
+import '../widgets/app_drawer.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -732,6 +733,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Finances', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [

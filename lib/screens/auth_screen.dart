@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'signup_screen.dart';
+
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
 
@@ -14,41 +16,24 @@ class _AuthScreenState extends State<AuthScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  Future<void> _signUp() async {
-    setState(() => _isLoading = true);
-    try {
-      await Supabase.instance.client.auth.signUp(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful!')),
-        );
-      }
-    } on AuthException catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error.message), backgroundColor: Theme.of(context).colorScheme.error),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unexpected error occurred')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   Future<void> _signIn() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+    
+    if (email.isEmpty || password.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter both email and password.'), backgroundColor: Colors.red),
+        );
+      }
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
       await Supabase.instance.client.auth.signInWithPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+        email: email,
+        password: password,
       );
     } on AuthException catch (error) {
       if (mounted) {
@@ -73,20 +58,16 @@ class _AuthScreenState extends State<AuthScreen> {
       // TODO: Replace with your actual Web Client ID from Google Cloud Console
       const webClientId = 'YOUR_WEB_CLIENT_ID_HERE.apps.googleusercontent.com';
       
-      final GoogleSignIn googleSignIn = GoogleSignIn(
+      await GoogleSignIn.instance.initialize(
         serverClientId: webClientId,
       );
-      final googleUser = await googleSignIn.signIn();
+      final googleUser = await GoogleSignIn.instance.authenticate();
       final googleAuth = await googleUser?.authentication;
       if (googleAuth == null) {
           throw 'Google authentication aborted.';
       }
-      final accessToken = googleAuth.accessToken;
       final idToken = googleAuth.idToken;
 
-      if (accessToken == null) {
-        throw 'No Access Token found.';
-      }
       if (idToken == null) {
         throw 'No ID Token found.';
       }
@@ -94,7 +75,6 @@ class _AuthScreenState extends State<AuthScreen> {
       await Supabase.instance.client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
-        accessToken: accessToken,
       );
     } catch (error) {
       if (mounted) {
@@ -184,7 +164,12 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 12),
                       OutlinedButton(
-                        onPressed: _signUp,
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SignUpScreen()),
+                          );
+                        },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           side: const BorderSide(color: Colors.blueAccent),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/api_provider.dart';
 import '../theme.dart';
+import '../widgets/app_drawer.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -43,6 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('AI Assistant', style: TextStyle(fontWeight: FontWeight.bold)),
       ),

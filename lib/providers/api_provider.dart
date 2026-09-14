@@ -50,7 +50,7 @@ class ApiProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       // Ping local server to see if it's running
-      final response = await http.get(Uri.parse('$_localUrl/memories')).timeout(const Duration(seconds: 15));
+      final response = await http.get(Uri.parse('$_localUrl/memories'), headers: _headers).timeout(const Duration(seconds: 15));
       if (response.statusCode == 200) {
         baseUrl = _localUrl;
       } else {
@@ -124,7 +124,7 @@ class ApiProvider extends ChangeNotifier {
 
   Future<void> _fetchExpenseCategoriesInternal() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/expense_categories'));
+      final response = await http.get(Uri.parse('$baseUrl/expense_categories'), headers: _headers);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         expenseCategories = data['categories'] ?? [];
@@ -154,7 +154,7 @@ class ApiProvider extends ChangeNotifier {
 
   Future<void> _fetchMemoriesInternal() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/memories'));
+      final response = await http.get(Uri.parse('$baseUrl/memories'), headers: _headers);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         memories = data['results'] ?? [];
@@ -364,7 +364,7 @@ class ApiProvider extends ChangeNotifier {
 
   Future<void> _fetchRemindersInternal() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/reminders'));
+      final response = await http.get(Uri.parse('$baseUrl/reminders'), headers: _headers);
       if (response.statusCode == 200) {
         reminders = json.decode(response.body);
       }
@@ -431,7 +431,7 @@ class ApiProvider extends ChangeNotifier {
 
   Future<void> _fetchTransactionsInternal() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/transactions'));
+      final response = await http.get(Uri.parse('$baseUrl/transactions'), headers: _headers);
       if (response.statusCode == 200) {
         transactions = json.decode(response.body);
       }
@@ -447,7 +447,7 @@ class ApiProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await http.get(Uri.parse('$baseUrl/chat?q=${Uri.encodeComponent(message)}'));
+      final response = await http.get(Uri.parse('$baseUrl/chat?q=${Uri.encodeComponent(message)}'), headers: _headers);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         chatHistory.add({"sender": "ai", "text": data['answer']});

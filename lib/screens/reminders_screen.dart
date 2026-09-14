@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/api_provider.dart';
 import '../theme.dart';
+import '../widgets/app_drawer.dart';
 
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
@@ -38,6 +39,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Tasks & Reminders', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
