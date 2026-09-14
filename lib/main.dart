@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'screens/auth_screen.dart';
 import 'providers/api_provider.dart';
 import 'theme.dart';
 import 'screens/add_screen.dart';
@@ -17,12 +19,18 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("Handling a background message: ${message.messageId}");
 }
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  await Supabase.initialize(
+    url: 'https://kbupfvxvouitjxvnahib.supabase.co',
+    anonKey: 'sb_publishable_quJjzs1OVa9vrotBfkwQ9Q_UPepLczW',
+  );
 
   runApp(
     MultiProvider(
@@ -34,6 +42,36 @@ void main() async {
   );
 }
 
+
+
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null) {
+      return const AuthScreen();
+    }
+    return const DashboardShell();
+  }
+}
+
 class VoiceMemoryApp extends StatelessWidget {
   const VoiceMemoryApp({super.key});
 
@@ -43,7 +81,7 @@ class VoiceMemoryApp extends StatelessWidget {
       title: 'Voice Memory',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const DashboardShell(),
+      home: const AuthWrapper(),
     );
   }
 }

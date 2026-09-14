@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
@@ -501,6 +502,14 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
             ),
           ),
           actions: [
+              if (!_isSelectionMode)
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () async {
+                    await Supabase.instance.client.auth.signOut();
+                  },
+                ),
+
             TextButton(
               onPressed: () => Navigator.pop(dialogContext),
               child: const Text('Cancel'),

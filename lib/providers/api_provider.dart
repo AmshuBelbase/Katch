@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ApiProvider extends ChangeNotifier {
   String baseUrl = "http://127.0.0.1:8000/api";
@@ -61,6 +63,7 @@ class ApiProvider extends ChangeNotifier {
     _setLoading(true);
     Future<String?> attemptUpload() async {
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/memory'));
+      _addAuthToMultipart(request);
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
       request.fields['timezone_offset'] = _getTimezoneOffset();
       
@@ -121,7 +124,7 @@ class ApiProvider extends ChangeNotifier {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/expense_categories'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({'name': name}),
       );
       if (response.statusCode == 200) {
@@ -153,7 +156,7 @@ class ApiProvider extends ChangeNotifier {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/fcm-token'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({'token': token}),
       );
       if (response.statusCode != 200) {
@@ -169,6 +172,7 @@ class ApiProvider extends ChangeNotifier {
     _setLoading(true);
     Future<String?> attemptUpload() async {
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/transcribe'));
+      _addAuthToMultipart(request);
       request.files.add(await http.MultipartFile.fromPath('file', filePath));
       request.fields['timezone_offset'] = _getTimezoneOffset();
       
@@ -210,7 +214,7 @@ class ApiProvider extends ChangeNotifier {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/memory/text'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({
           'text': text, 
           'source': source,
@@ -238,7 +242,7 @@ class ApiProvider extends ChangeNotifier {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/memory/$id'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({
           'text': newText,
           'timezone_offset': _getTimezoneOffset()
@@ -261,7 +265,7 @@ class ApiProvider extends ChangeNotifier {
     await _initFuture;
     _setLoading(true);
     try {
-      final response = await http.delete(Uri.parse('$baseUrl/memory/$id'));
+      final response = await http.delete(Uri.parse('$baseUrl/memory/$id'), headers: _headers);
       if (response.statusCode == 200) {
         await fetchMemories();
         return true;
@@ -281,7 +285,7 @@ class ApiProvider extends ChangeNotifier {
     try {
       final response = await http.delete(
         Uri.parse('$baseUrl/memories'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({'ids': ids}),
       );
       if (response.statusCode == 200) {
@@ -310,7 +314,7 @@ class ApiProvider extends ChangeNotifier {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/memory/$id/star'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({'is_starred': isStarred}),
       );
       
@@ -374,7 +378,7 @@ class ApiProvider extends ChangeNotifier {
     try {
       final response = await http.put(
         Uri.parse('$baseUrl/reminders/$id'),
-        headers: {'Content-Type': 'application/json'},
+        headers: _headers,
         body: json.encode({
           'is_completed': isCompleted,
           'status': status
