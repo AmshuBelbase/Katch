@@ -206,6 +206,44 @@ class ApiProvider extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> forceExtractReminder(String memoryId) async {
+    await initFuture;
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/memories/$memoryId/extract-reminder'),
+        headers: _headers,
+        body: json.encode({'timezone_offset': _getTimezoneOffset()}),
+      );
+      final data = json.decode(response.body);
+      if (response.statusCode == 200 && data['status'] == 'success') {
+        await _fetchRemindersInternal();
+        notifyListeners();
+      }
+      return data;
+    } catch (e) {
+      return {'status': 'error', 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> forceExtractFinance(String memoryId) async {
+    await initFuture;
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/memories/$memoryId/extract-finance'),
+        headers: _headers,
+      );
+      final data = json.decode(response.body);
+      if (response.statusCode == 200 && data['status'] == 'success') {
+        await _fetchTransactionsInternal();
+        notifyListeners();
+      }
+      return data;
+    } catch (e) {
+      return {'status': 'error', 'message': e.toString()};
+    }
+  }
+
+
   Future<void> registerFcmToken(String token) async {
     await initFuture;
     try {
