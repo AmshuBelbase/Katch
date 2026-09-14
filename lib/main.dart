@@ -99,6 +99,14 @@ class DashboardShell extends StatefulWidget {
 class _DashboardShellState extends State<DashboardShell> {
   int _currentIndex = 0;
 
+  void _navigateFromMessage(RemoteMessage message) {
+    final screen = message.data['screen'];
+    if (screen == 'reminders') {
+      setState(() => _currentIndex = 3);
+    }
+    // Add more screen mappings here as needed
+  }
+
   @override
   void initState() {
     super.initState();
@@ -119,6 +127,20 @@ class _DashboardShellState extends State<DashboardShell> {
           Provider.of<ApiProvider>(context, listen: false).registerFcmToken(token);
         }
       }
+    }
+
+    // App opened from a notification while in the BACKGROUND
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      _navigateFromMessage(message);
+    });
+
+    // App opened from a notification while TERMINATED (cold start)
+    final RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      // Slight delay to ensure the widget tree is ready
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigateFromMessage(initialMessage);
+      });
     }
   }
 
