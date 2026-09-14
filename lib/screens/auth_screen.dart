@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import '../theme.dart';
+import 'signup_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({Key? key}) : super(key: key);
@@ -111,13 +112,85 @@ class _AuthScreenState extends State<AuthScreen> {
                     color: AppTheme.primary,
                   ),
                 ),
-                const SizedBox(height: 64),
+                const SizedBox(height: 48),
+                TextField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    hintText: 'Email',
+                    filled: true,
+                    fillColor: Colors.black.withOpacity(0.03),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.email, color: Colors.grey),
+                  ),
+                  style: const TextStyle(color: Colors.black87),
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _passwordController,
+                  decoration: InputDecoration(
+                    hintText: 'Password',
+                    filled: true,
+                    fillColor: Colors.black.withOpacity(0.03),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    prefixIcon: const Icon(Icons.lock, color: Colors.grey),
+                  ),
+                  style: const TextStyle(color: Colors.black87),
+                  obscureText: true,
+                ),
+                const SizedBox(height: 24),
                 if (_isLoading)
                   const CircularProgressIndicator()
                 else
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      ElevatedButton(
+                        onPressed: _signIn,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Login', style: TextStyle(fontSize: 16, color: Colors.white)),
+                      ),
+                      const SizedBox(height: 12),
+                      OutlinedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const SignUpScreen()),
+                          );
+                        },
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: const BorderSide(color: AppTheme.primary),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text('Create Account', style: TextStyle(fontSize: 16, color: AppTheme.primary)),
+                      ),
+                      const SizedBox(height: 24),
+                      const Row(
+                        children: [
+                          Expanded(child: Divider(color: Colors.grey)),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Text('OR', style: TextStyle(color: Colors.grey)),
+                          ),
+                          Expanded(child: Divider(color: Colors.grey)),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
                       ElevatedButton.icon(
                         onPressed: _googleSignIn,
                         icon: const Icon(Icons.g_mobiledata, size: 32, color: Colors.white),

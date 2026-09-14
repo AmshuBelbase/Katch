@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../theme.dart';
+import 'otp_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
@@ -47,15 +49,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
         data: {'name': name},
       );
 
-      // Supabase automatically creates a session if email confirmation is disabled.
-      // We explicitly sign out here to force the user to manually log in.
-      await Supabase.instance.client.auth.signOut();
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please confirm email before logging in.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
+        // Navigate to OTP Screen for verification
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OtpScreen(
+              email: email,
+              type: OtpType.signup,
+            ),
+          ),
         );
-        Navigator.pop(context); // Go back to login screen
       }
     } on AuthException catch (error) {
       if (mounted) {
