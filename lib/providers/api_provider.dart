@@ -580,14 +580,33 @@ class ApiProvider extends ChangeNotifier {
   Future<bool> deleteReminder(String id) async {
     await initFuture;
     _setLoading(true);
+
+    // Optimistically remove from list
+    final index = reminders.indexWhere((r) => r['id'].toString() == id);
+    Map<String, dynamic>? backup;
+    if (index != -1) {
+      backup = reminders[index];
+      reminders.removeAt(index);
+      notifyListeners();
+    }
+
     try {
       final response = await http.delete(Uri.parse('$baseUrl/reminders/$id'), headers: _headers);
       if (response.statusCode == 200) {
-        await fetchReminders();
+        // success
         return true;
+      }
+      // Revert on failure
+      if (backup != null) {
+        reminders.insert(index, backup);
+        notifyListeners();
       }
       return false;
     } catch (e) {
+      if (backup != null) {
+        reminders.insert(index, backup);
+        notifyListeners();
+      }
       error = e.toString();
       return false;
     } finally {
@@ -598,14 +617,32 @@ class ApiProvider extends ChangeNotifier {
   Future<bool> deleteTransaction(String id) async {
     await initFuture;
     _setLoading(true);
+
+    // Optimistically remove from list
+    final index = transactions.indexWhere((t) => t['id'].toString() == id);
+    Map<String, dynamic>? backup;
+    if (index != -1) {
+      backup = transactions[index];
+      transactions.removeAt(index);
+      notifyListeners();
+    }
+
     try {
       final response = await http.delete(Uri.parse('$baseUrl/transactions/$id'), headers: _headers);
       if (response.statusCode == 200) {
-        await fetchTransactions();
+        // success
         return true;
+      }
+      if (backup != null) {
+        transactions.insert(index, backup);
+        notifyListeners();
       }
       return false;
     } catch (e) {
+      if (backup != null) {
+        transactions.insert(index, backup);
+        notifyListeners();
+      }
       error = e.toString();
       return false;
     } finally {

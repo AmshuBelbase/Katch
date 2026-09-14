@@ -46,74 +46,72 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: const AppDrawer(),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 200,
-            floating: true,
-            pinned: true,
-            title: _isSelectionMode 
-                ? Text('${_selectedMemoryIds.length} Selected', style: const TextStyle(fontWeight: FontWeight.bold))
-                : null,
-            leading: _isSelectionMode
-                ? IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      setState(() {
-                        _selectedMemoryIds.clear();
-                      });
-                    },
-                  )
-                : null,
-            actions: _isSelectionMode
-                ? [
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.redAccent),
-                      onPressed: () async {
-                        final api = Provider.of<ApiProvider>(context, listen: false);
-                        final count = _selectedMemoryIds.length;
-                        final success = await api.deleteMultipleMemories(_selectedMemoryIds.toList());
-                        setState(() {
-                          _selectedMemoryIds.clear();
-                        });
-                        if (context.mounted) {
-                          if (success) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted $count notes successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete notes.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
-                          }
-                        }
-                      },
+      appBar: AppBar(
+        title: _isSelectionMode 
+            ? Text('${_selectedMemoryIds.length} Selected', style: const TextStyle(fontWeight: FontWeight.bold))
+            : Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
+                    height: 24,
+                  ),
+                  const SizedBox(width: 8),
+                  Text('KATCH', style: GoogleFonts.michroma(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).colorScheme.primary)),
+                ],
+              ),
+        leading: _isSelectionMode
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  setState(() {
+                    _selectedMemoryIds.clear();
+                  });
+                },
+              )
+            : null,
+        actions: _isSelectionMode
+            ? [
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.redAccent),
+                  onPressed: () async {
+                    final api = Provider.of<ApiProvider>(context, listen: false);
+                    final count = _selectedMemoryIds.length;
+                    final success = await api.deleteMultipleMemories(_selectedMemoryIds.toList());
+                    setState(() {
+                      _selectedMemoryIds.clear();
+                    });
+                    if (context.mounted) {
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted $count notes successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete notes.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+                      }
+                    }
+                  },
+                ),
+              ]
+            : [],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(110),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search notes...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () => _searchController.clear(),
                     ),
-                  ]
-                : [
-                    
-                  ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
-                padding: const EdgeInsets.only(top: 110, left: 16, right: 16),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Search notes...',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () => _searchController.clear(),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(vertical: 0),
-                      ),
-                    ),
-                  ],
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  ),
                 ),
               ),
-            ),
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(50),
-              child: SingleChildScrollView(
+              SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Row(
@@ -137,8 +135,12 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   }).toList(),
                 ),
               ),
-            ),
+            ],
           ),
+        ),
+      ),
+      body: CustomScrollView(
+        slivers: [
           Consumer<ApiProvider>(
             builder: (context, api, child) {
               List<dynamic> chartMemories = List.from(api.memories);
