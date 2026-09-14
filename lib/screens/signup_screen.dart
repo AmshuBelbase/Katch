@@ -97,10 +97,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.person_add_alt_1_rounded,
-                  size: 80,
-                  color: AppTheme.primary,
+                Image.asset(
+                  'assets/katch_logo.png',
+                  height: 100,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.person_add_alt_1_rounded,
+                      size: 80,
+                      color: AppTheme.primary,
+                    );
+                  },
                 ),
                 const SizedBox(height: 24),
                 const Text(

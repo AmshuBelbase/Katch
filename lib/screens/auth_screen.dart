@@ -98,14 +98,20 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.memory,
-                  size: 80,
-                  color: AppTheme.primary,
+                Image.asset(
+                  'assets/katch_logo.png',
+                  height: 100,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(
+                      Icons.memory,
+                      size: 80,
+                      color: AppTheme.primary,
+                    );
+                  },
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  'Voice Memory Hub',
+                  'Katch',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,

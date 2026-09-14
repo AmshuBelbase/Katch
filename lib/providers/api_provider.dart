@@ -40,7 +40,8 @@ class ApiProvider extends ChangeNotifier {
   List<dynamic> transactions = [];
   List<dynamic> chatHistory = [];
   List<dynamic> expenseCategories = [];
-  Future<void>? _initFuture;
+  Future<void>? initFuture;
+  String connectionStatus = "Initializing Katch...";
 
   String _getTimezoneOffset() {
     final offset = DateTime.now().timeZoneOffset;
@@ -51,12 +52,14 @@ class ApiProvider extends ChangeNotifier {
   }
 
   ApiProvider() {
-    _initFuture = _initializeConnectivity();
+    initFuture = _initializeConnectivity();
   }
 
   Future<void> _initializeConnectivity() async {
     _setLoading(true);
     error = null;
+    connectionStatus = "Checking server connectivity...";
+    notifyListeners();
     
     Future<bool> checkHealth(String url) async {
       try {
@@ -78,20 +81,26 @@ class ApiProvider extends ChangeNotifier {
 
     if (isLocalAlive) {
       baseUrl = _localUrl;
+      connectionStatus = "Connected to local server!";
       print("Connected to LOCAL server at $baseUrl");
     } else if (isCloudAlive) {
       baseUrl = _cloudUrl;
+      connectionStatus = "Connected to cloud server!";
       print("Connected to CLOUD server at $baseUrl");
     } else {
+      connectionStatus = "Server unreachable.";
       error = "Cannot access server. Please check your internet connection.";
       _setLoading(false);
       notifyListeners();
       throw Exception(error); // Bubble up so dependent API calls stop
     }
+    notifyListeners();
     
     // Only fetch data if we have an active auth session
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
     if (token != null) {
+      connectionStatus = "Syncing your memory vault...";
+      notifyListeners();
       await Future.wait([
         _fetchMemoriesInternal(),
         _fetchRemindersInternal(),
@@ -105,7 +114,7 @@ class ApiProvider extends ChangeNotifier {
 
 
   Future<String?> createAudioMemory(String filePath) async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     Future<String?> attemptUpload() async {
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/memory'));
@@ -147,7 +156,7 @@ class ApiProvider extends ChangeNotifier {
 
   // --- MEMORIES ---
   Future<void> fetchMemories() async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     await _fetchMemoriesInternal();
     _setLoading(false);
@@ -198,7 +207,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<void> registerFcmToken(String token) async {
-    await _initFuture;
+    await initFuture;
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/fcm-token'),
@@ -214,7 +223,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<String?> transcribeAudio(String filePath) async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     Future<String?> attemptUpload() async {
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/transcribe'));
@@ -255,7 +264,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<String?> createTextMemory(String text, {String source = 'text'}) async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     try {
       final response = await http.post(
@@ -284,7 +293,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<void> requestOTP(String name, String email, String password) async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     try {
       final response = await http.post(
@@ -303,7 +312,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<void> verifyOTP(String email, String otp) async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     try {
       final response = await http.post(
@@ -322,7 +331,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<bool> updateMemory(String id, String newText) async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     try {
       final response = await http.put(
@@ -347,7 +356,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteMemory(String id) async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     try {
       final response = await http.delete(Uri.parse('$baseUrl/memory/$id'), headers: _headers);
@@ -365,7 +374,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteMultipleMemories(List<String> ids) async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     try {
       final response = await http.delete(
@@ -387,7 +396,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<bool> toggleStarMemory(String id, bool isStarred) async {
-    await _initFuture;
+    await initFuture;
     
     // Optimistic UI update
     int index = memories.indexWhere((m) => m['id'].toString() == id);
@@ -426,7 +435,7 @@ class ApiProvider extends ChangeNotifier {
 
   // --- REMINDERS ---
   Future<void> fetchReminders() async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     await _fetchRemindersInternal();
     _setLoading(false);
@@ -444,7 +453,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<bool> updateReminderSettings(String id, bool isCompleted, String status) async {
-    await _initFuture;
+    await initFuture;
     
     // Optimistic UI update
     final index = reminders.indexWhere((r) => r['id'].toString() == id);
@@ -493,7 +502,7 @@ class ApiProvider extends ChangeNotifier {
 
   // --- TRANSACTIONS ---
   Future<void> fetchTransactions() async {
-    await _initFuture;
+    await initFuture;
     _setLoading(true);
     await _fetchTransactionsInternal();
     _setLoading(false);
@@ -512,7 +521,7 @@ class ApiProvider extends ChangeNotifier {
 
   // --- CHAT ---
   Future<void> sendChatMessage(String message) async {
-    await _initFuture;
+    await initFuture;
     chatHistory.add({"sender": "user", "text": message});
     notifyListeners();
 

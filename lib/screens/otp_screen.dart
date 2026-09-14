@@ -81,7 +81,13 @@ class _OtpScreenState extends State<OtpScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.mark_email_unread, size: 80, color: AppTheme.primary),
+              Image.asset(
+                'assets/katch_logo.png',
+                height: 100,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.mark_email_unread, size: 80, color: AppTheme.primary);
+                },
+              ),
               const SizedBox(height: 24),
               const Text(
                 'Enter Verification Code',

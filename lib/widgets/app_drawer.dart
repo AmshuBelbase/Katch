@@ -17,14 +17,20 @@ class AppDrawer extends StatelessWidget {
             decoration: const BoxDecoration(
               color: AppTheme.primary,
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Icon(Icons.memory, size: 48, color: Colors.white),
-                SizedBox(height: 16),
-                Text(
-                  'Voice Memory',
+                Image.asset(
+                  'assets/katch_logo.png',
+                  height: 48,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.memory, size: 48, color: AppTheme.primary);
+                  },
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Katch',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,

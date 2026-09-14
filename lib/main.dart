@@ -5,6 +5,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/auth_screen.dart';
+import 'screens/splash_screen.dart';
 import 'providers/api_provider.dart';
 import 'theme.dart';
 import 'screens/add_screen.dart';
@@ -78,10 +79,10 @@ class VoiceMemoryApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Voice Memory',
+      title: 'Katch',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      home: const AuthWrapper(),
+      home: const SplashScreen(),
     );
   }
 }

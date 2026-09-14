@@ -280,12 +280,21 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                _selectedChartDate != null 
-                    ? 'Activity (${DateFormat('MMM d').format(_selectedChartDate!)})' 
-                    : 'Activity (Last 7 Days)', 
-                style: const TextStyle(fontWeight: FontWeight.bold)
-              ),
+              if (_selectedChartDate != null)
+                Text(
+                  'Activity (${DateFormat('MMM d').format(_selectedChartDate!)})',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                )
+              else if (memories.isEmpty && _searchController.text.isEmpty)
+                const Text(
+                  'Record a Katch Memory',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                )
+              else
+                const Text(
+                  'Activity (Last 7 Days)',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               Text(
                 '$totalMemories memories',
                 style: const TextStyle(color: Colors.grey, fontSize: 12),

@@ -319,7 +319,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Voice Memory Saved'),
+          title: const Text('Katch Memory Saved'),
           content: Text(transcribedText),
           actions: [
             TextButton(
@@ -362,7 +362,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
       barrierDismissible: false,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Edit Voice Memory'),
+          title: const Text('Edit Katch Memory'),
           content: TextField(
             controller: editController,
             maxLines: 5,
