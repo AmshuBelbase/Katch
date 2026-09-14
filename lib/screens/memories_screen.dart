@@ -457,9 +457,8 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                         },
                         tooltip: api.reminders.any((r) => r['memory_id'] == memoryId) ? 'Reminder added' : 'Add to Reminders',
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                       ),
-                      const SizedBox(width: 8),
                       IconButton(
                         icon: Icon(
                           api.transactions.any((t) => t['memory_id'] == memoryId) ? Icons.monetization_on : Icons.add_card, 
@@ -473,13 +472,13 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                         },
                         tooltip: api.transactions.any((t) => t['memory_id'] == memoryId) ? 'Finance added' : 'Add to Finance',
                         padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
+                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                       ),
-                      const SizedBox(width: 8),
                       IconButton(
                         icon: Icon(
                           isStarred ? Icons.star : Icons.star_border,
                           color: isStarred ? Colors.amber : Colors.grey,
+                          size: 20
                         ),
                         onPressed: () async {
                           bool success = await api.toggleStarMemory(memoryId, !isStarred);
@@ -493,9 +492,15 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                             );
                           }
                         },
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                       ),
                       if (!_isSelectionMode)
-                        PopupMenuButton<String>(
+                        SizedBox(
+                          width: 28,
+                          height: 28,
+                          child: PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
                           onSelected: (val) async {
                             if (val == 'delete') {
                               final success = await api.deleteMemory(memoryId);
@@ -515,6 +520,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                             const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
                           ],
                           icon: const Icon(Icons.more_vert, size: 20),
+                        )
                         )
                     ],
                   )
