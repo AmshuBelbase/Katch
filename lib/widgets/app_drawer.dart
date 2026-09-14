@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme.dart';
+import '../screens/settings_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -32,6 +33,17 @@ class AppDrawer extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.settings, color: AppTheme.primary),
+            title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.w500)),
+            onTap: () {
+              Navigator.pop(context); // Close drawer
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
           ),
           ListTile(
             leading: const Icon(Icons.logout, color: AppTheme.primary),

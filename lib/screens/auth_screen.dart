@@ -55,8 +55,8 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _googleSignIn() async {
     setState(() => _isLoading = true);
     try {
-      // TODO: Replace with your actual Web Client ID from Google Cloud Console
-      const webClientId = 'YOUR_WEB_CLIENT_ID_HERE.apps.googleusercontent.com';
+      // Replace with your actual Web Client ID from Google Cloud Console
+      const webClientId = '584736201207-c8uuaohckpovcaq7iji8n7sotk2eg9p5.apps.googleusercontent.com';
       
       await GoogleSignIn.instance.initialize(
         serverClientId: webClientId,

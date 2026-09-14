@@ -46,18 +46,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
         password: password,
         data: {'name': name},
       );
-      
-      // Explicitly sign in after sign up
-      await Supabase.instance.client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
+
+      // Supabase automatically creates a session if email confirmation is disabled.
+      // We explicitly sign out here to force the user to manually log in.
+      await Supabase.instance.client.auth.signOut();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful!', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Please confirm email before logging in.', style: TextStyle(color: Colors.white)), backgroundColor: Colors.green),
         );
-        Navigator.pop(context); // Go back, AuthWrapper will detect login and show dashboard
+        Navigator.pop(context); // Go back to login screen
       }
     } on AuthException catch (error) {
       if (mounted) {
