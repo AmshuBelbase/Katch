@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../main.dart'; // For AuthWrapper
+import '../services/update_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -44,6 +45,13 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _navigateToNext() async {
+    // Check for updates before proceeding
+    bool updateFound = await UpdateService.checkForUpdates(context);
+    if (updateFound) {
+      _timer?.cancel();
+      return; // Halt navigation, force update
+    }
+
     final apiProvider = Provider.of<ApiProvider>(context, listen: false);
     
     // Wait for the API provider's initialization future to complete
