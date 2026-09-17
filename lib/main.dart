@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:alarm/alarm.dart';
 import 'screens/auth_screen.dart';
 import 'screens/splash_screen.dart';
 import 'providers/api_provider.dart';
@@ -23,6 +24,10 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Alarm package
+  await Alarm.init();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -111,6 +116,32 @@ class _DashboardShellState extends State<DashboardShell> {
   void initState() {
     super.initState();
     _setupFCM();
+    _setupAlarmListener();
+  }
+
+  void _setupAlarmListener() {
+    Alarm.ringStream.stream.listen((alarmSettings) {
+      print("Alarm ringing: ${alarmSettings.id}");
+      if (mounted) {
+        setState(() => _currentIndex = 3);
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Alarm Ringing!"),
+            content: Text(alarmSettings.notificationBody ?? "A scheduled reminder is due!"),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Alarm.stop(alarmSettings.id);
+                  Navigator.pop(context);
+                },
+                child: const Text("Stop Alarm"),
+              )
+            ],
+          ),
+        );
+      }
+    });
   }
 
   Future<void> _setupFCM() async {

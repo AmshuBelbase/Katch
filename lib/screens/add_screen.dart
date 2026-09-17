@@ -5,6 +5,7 @@ import 'package:record/record.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'dart:async';
 import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../widgets/app_drawer.dart';
@@ -22,6 +23,8 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late TabController _tabController;
   final AudioRecorder _audioRecorder = AudioRecorder();
+  Timer? _timer;
+  int _recordDuration = 0;
   
   bool _isRecording = false;
   bool _isProcessing = false;
@@ -39,11 +42,28 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    _timer?.cancel();
     _textController.dispose();
     _pulseController.dispose();
     _tabController.dispose();
     _audioRecorder.dispose();
     super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _recordDuration = 0;
+    _timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      if (mounted) {
+        setState(() => _recordDuration++);
+      }
+    });
+  }
+
+  String _formatDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   Future<void> _startRecording() async {
@@ -59,6 +79,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
         setState(() {
           _isRecording = true;
         });
+        _startTimer();
       }
     } catch (e) {
       debugPrint("Error starting record: $e");
@@ -67,6 +88,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
 
   Future<void> _stopRecording() async {
     try {
+      _timer?.cancel();
       final path = await _audioRecorder.stop();
       setState(() {
         _isRecording = false;
@@ -189,9 +211,9 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text(
-            '00:00',
-            style: TextStyle(fontSize: 48, fontWeight: FontWeight.w300),
+          Text(
+            _formatDuration(_recordDuration),
+            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w300),
           ),
           const SizedBox(height: 40),
           if (_isProcessing)

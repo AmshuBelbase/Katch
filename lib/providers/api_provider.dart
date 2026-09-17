@@ -3,7 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:alarm/alarm.dart';
 class ApiProvider extends ChangeNotifier {
   Map<String, String> get _headers {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
@@ -484,6 +484,7 @@ class ApiProvider extends ChangeNotifier {
       final response = await http.get(Uri.parse('$baseUrl/reminders'), headers: _headers);
       if (response.statusCode == 200) {
         reminders = json.decode(response.body);
+        _syncAlarms();
       }
     } catch (e) {
       error = e.toString();
@@ -504,6 +505,7 @@ class ApiProvider extends ChangeNotifier {
       
       reminders[index]['is_completed'] = isCompleted;
       reminders[index]['status'] = status;
+      _syncAlarms();
       notifyListeners();
     }
     
@@ -523,6 +525,7 @@ class ApiProvider extends ChangeNotifier {
         if (index != -1) {
           reminders[index]['is_completed'] = previousCompleted;
           reminders[index]['status'] = previousStatus;
+          _syncAlarms();
           notifyListeners();
         }
         return false;
@@ -532,6 +535,7 @@ class ApiProvider extends ChangeNotifier {
       if (index != -1) {
         reminders[index]['is_completed'] = previousCompleted;
         reminders[index]['status'] = previousStatus;
+        _syncAlarms();
         notifyListeners();
       }
       return false;
@@ -588,6 +592,7 @@ class ApiProvider extends ChangeNotifier {
     if (index != -1) {
       backup = reminders[index];
       reminders.removeAt(index);
+      _syncAlarms();
       notifyListeners();
     }
 
@@ -600,12 +605,14 @@ class ApiProvider extends ChangeNotifier {
       // Revert on failure
       if (backup != null) {
         reminders.insert(index, backup);
+        _syncAlarms();
         notifyListeners();
       }
       return false;
     } catch (e) {
       if (backup != null) {
         reminders.insert(index, backup);
+        _syncAlarms();
         notifyListeners();
       }
       error = e.toString();
@@ -699,5 +706,48 @@ class ApiProvider extends ChangeNotifier {
   void _setLoading(bool val) {
     isLoading = val;
     notifyListeners();
+  }
+
+  Future<void> _syncAlarms() async {
+    final activeAlarms = Alarm.getAlarms();
+    final activeAlarmIds = activeAlarms.map((a) => a.id).toSet();
+    final validAlarmIds = <int>{};
+    
+    for (var r in reminders) {
+      if (r['is_completed'] == true) continue;
+      
+      if (r['status'] == 'phone' || r['status'] == 'both') {
+        DateTime dueUtc = DateTime.parse(r['due_datetime']);
+        if (!dueUtc.isUtc) dueUtc = DateTime.parse('${r['due_datetime']}Z');
+        DateTime dueLocal = dueUtc.toLocal();
+        
+        if (dueLocal.isAfter(DateTime.now())) {
+          int id = r['id'].toString().hashCode.abs() % 100000;
+          validAlarmIds.add(id);
+          
+          if (!activeAlarmIds.contains(id)) {
+            final alarmSettings = AlarmSettings(
+              id: id,
+              dateTime: dueLocal,
+              assetAudioPath: 'assets/alarm.mp3',
+              loopAudio: true,
+              vibrate: true,
+              volume: 0.8,
+              fadeDuration: 3.0,
+              notificationTitle: 'Katch Reminder',
+              notificationBody: r['task_name'] ?? 'Task due!',
+              enableNotificationOnKill: Platform.isIOS,
+            );
+            await Alarm.set(alarmSettings: alarmSettings);
+          }
+        }
+      }
+    }
+    
+    for (var alarmId in activeAlarmIds) {
+      if (!validAlarmIds.contains(alarmId)) {
+        await Alarm.stop(alarmId);
+      }
+    }
   }
 }
