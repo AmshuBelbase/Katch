@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:ota_update/ota_update.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class UpdateService {
   static const String owner = 'AmshuBelbase';
@@ -80,101 +80,48 @@ class UpdateService {
   }
 }
 
-class UpdateDialog extends StatefulWidget {
+class UpdateDialog extends StatelessWidget {
   final String version;
   final String notes;
   final String downloadUrl;
 
   const UpdateDialog({
-    Key? key,
+    super.key,
     required this.version,
     required this.notes,
     required this.downloadUrl,
-  }) : super(key: key);
+  });
 
-  @override
-  State<UpdateDialog> createState() => _UpdateDialogState();
-}
-
-class _UpdateDialogState extends State<UpdateDialog> {
-  bool _isDownloading = false;
-  String _progress = '';
-  OtaEvent? _currentEvent;
-
-  void _startDownload() {
-    setState(() {
-      _isDownloading = true;
-    });
-
-    try {
-      OtaUpdate()
-          .execute(
-        widget.downloadUrl,
-        destinationFilename: 'katch_update.apk',
-      )
-          .listen(
-        (OtaEvent event) {
-          setState(() {
-            _currentEvent = event;
-            if (event.status == OtaStatus.DOWNLOADING) {
-              _progress = '${event.value}%';
-            } else if (event.status == OtaStatus.INSTALLING) {
-              _progress = 'Installing...';
-            } else if (event.status == OtaStatus.PERMISSION_NOT_GRANTED_ERROR) {
-              _progress = 'Storage permission required.';
-              _isDownloading = false;
-            } else if (event.status != OtaStatus.DOWNLOADING) {
-              _isDownloading = false;
-            }
-          });
-        },
-        onError: (error) {
-          setState(() {
-            _isDownloading = false;
-            _progress = 'Download failed: $error';
-          });
-        },
-      );
-    } catch (e) {
-      setState(() {
-        _isDownloading = false;
-        _progress = 'Failed to start download.';
-      });
+  Future<void> _launchDownloadUrl() async {
+    final Uri url = Uri.parse(downloadUrl);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      debugPrint('Could not launch $url');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Update Available: v${widget.version}'),
+      title: Text('Update Available: v$version'),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Release Notes:\n${widget.notes}'),
+            Text('Release Notes:\n$notes'),
             const SizedBox(height: 20),
-            if (_isDownloading)
-              Column(
-                children: [
-                  const LinearProgressIndicator(),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Status: ${_currentEvent?.status.toString().split('.').last ?? "DOWNLOADING"}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  if (_progress.isNotEmpty) Text(_progress),
-                ],
-              ),
+            const Text(
+              'Clicking update will open your browser to download the latest APK file. Once downloaded, open it from your notifications to install.',
+              style: TextStyle(fontStyle: FontStyle.italic, fontSize: 13, color: Colors.grey),
+            )
           ],
         ),
       ),
       actions: [
-        if (!_isDownloading)
-          ElevatedButton(
-            onPressed: _startDownload,
-            child: const Text('Update Now'),
-          ),
+        ElevatedButton(
+          onPressed: _launchDownloadUrl,
+          child: const Text('Download Update'),
+        ),
       ],
     );
   }
