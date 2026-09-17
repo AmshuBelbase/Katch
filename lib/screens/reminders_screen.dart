@@ -255,15 +255,19 @@ class _RemindersScreenState extends State<RemindersScreen> {
                   itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                     const PopupMenuItem<String>(
                       value: 'none',
-                      child: Row(children: [Icon(Icons.notifications_off, size: 20, color: Colors.grey), SizedBox(width: 8), Text('None')]),
+                      child: Row(children: [Icon(Icons.notifications_off, size: 20, color: Colors.grey), SizedBox(width: 8), Text('Silent')]),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'push_only',
+                      child: Row(children: [Icon(Icons.notifications, size: 20, color: Colors.blue), SizedBox(width: 8), Text('Push Only')]),
                     ),
                     const PopupMenuItem<String>(
                       value: 'phone',
-                      child: Row(children: [Icon(Icons.smartphone, size: 20, color: Colors.blue), SizedBox(width: 8), Text('Phone Only')]),
+                      child: Row(children: [Icon(Icons.alarm, size: 20, color: Colors.orange), SizedBox(width: 8), Text('Push + Alarm')]),
                     ),
                     const PopupMenuItem<String>(
                       value: 'both',
-                      child: Row(children: [Icon(Icons.notifications_active, size: 20, color: Colors.green), SizedBox(width: 8), Text('Phone & Email')]),
+                      child: Row(children: [Icon(Icons.notifications_active, size: 20, color: Colors.green), SizedBox(width: 8), Text('Push + Alarm + Email')]),
                     ),
                   ],
                 ),
@@ -281,8 +285,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
       case 'none':
       case 'Not needed':
         return const Icon(Icons.notifications_off, color: Colors.grey, size: 20);
+      case 'push_only':
+        return const Icon(Icons.notifications, color: Colors.blue, size: 20);
       case 'phone':
-        return const Icon(Icons.smartphone, color: Colors.blue, size: 20);
+        return const Icon(Icons.alarm, color: Colors.orange, size: 20);
       case 'both':
       case 'pending':
         return const Icon(Icons.notifications_active, color: Colors.green, size: 20);
