@@ -4,7 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:alarm/alarm.dart';
+import 'package:alarm/alarm.dart' hide NotificationSettings;
 import 'screens/auth_screen.dart';
 import 'screens/splash_screen.dart';
 import 'providers/api_provider.dart';
@@ -128,7 +128,7 @@ class _DashboardShellState extends State<DashboardShell> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text("Alarm Ringing!"),
-            content: Text(alarmSettings.notificationBody ?? "A scheduled reminder is due!"),
+            content: Text(alarmSettings.notificationSettings.body.isNotEmpty ? alarmSettings.notificationSettings.body : "A scheduled reminder is due!"),
             actions: [
               TextButton(
                 onPressed: () {

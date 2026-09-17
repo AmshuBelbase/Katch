@@ -727,7 +727,7 @@ class ApiProvider extends ChangeNotifier {
   }
 
   Future<void> _syncAlarms() async {
-    final activeAlarms = Alarm.getAlarms();
+    final activeAlarms = await Alarm.getAlarms();
     final activeAlarmIds = activeAlarms.map((a) => a.id).toSet();
     final validAlarmIds = <int>{};
     
@@ -750,11 +750,15 @@ class ApiProvider extends ChangeNotifier {
               assetAudioPath: 'assets/alarm.mp3',
               loopAudio: true,
               vibrate: true,
-              volume: 0.8,
-              fadeDuration: 3.0,
-              notificationTitle: 'Katch Reminder',
-              notificationBody: r['task_name'] ?? 'Task due!',
-              enableNotificationOnKill: Platform.isIOS,
+              volumeSettings: VolumeSettings.fade(
+                volume: 0.8,
+                fadeDuration: const Duration(seconds: 3),
+              ),
+              notificationSettings: NotificationSettings(
+                title: 'Katch Reminder',
+                body: r['task_name'] ?? 'Task due!',
+              ),
+              warningNotificationOnKill: Platform.isIOS,
             );
             await Alarm.set(alarmSettings: alarmSettings);
           }
