@@ -13,6 +13,9 @@ class UpdateService {
       // 1. Get current app version
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       String currentVersion = packageInfo.version;
+      if (packageInfo.buildNumber.isNotEmpty) {
+        currentVersion += '.${packageInfo.buildNumber}';
+      }
 
       // 2. Fetch latest release from GitHub API
       final response = await http.get(
