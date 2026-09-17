@@ -48,7 +48,30 @@ class _ChatScreenState extends State<ChatScreen> {
       drawer: const AppDrawer(),
       appBar: AppBar(
           actions: [
-            
+            Consumer<ApiProvider>(
+              builder: (context, api, child) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${api.remainingChats} left',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+            )
           ],
         title: Row(
           mainAxisSize: MainAxisSize.min,

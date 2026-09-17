@@ -42,6 +42,7 @@ class ApiProvider extends ChangeNotifier {
   List<dynamic> expenseCategories = [];
   Future<void>? initFuture;
   String connectionStatus = "Initializing Katch...";
+  int remainingChats = 15;
 
   String _getTimezoneOffset() {
     final offset = DateTime.now().timeZoneOffset;
@@ -106,6 +107,7 @@ class ApiProvider extends ChangeNotifier {
         _fetchRemindersInternal(),
         _fetchTransactionsInternal(),
         _fetchExpenseCategoriesInternal(),
+        fetchChatStatus(),
       ]);
     }
     _setLoading(false);
@@ -562,6 +564,19 @@ class ApiProvider extends ChangeNotifier {
   }
 
   // --- CHAT ---
+  Future<void> fetchChatStatus() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/chat/status'), headers: _headers);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        remainingChats = data['remaining_chats'] ?? 15;
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Error fetching chat status: $e');
+    }
+  }
+
   Future<void> sendChatMessage(String message) async {
     await initFuture;
     chatHistory.add({"sender": "user", "text": message});
@@ -573,6 +588,9 @@ class ApiProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         chatHistory.add({"sender": "ai", "text": data['answer']});
+        if (data['remaining_chats'] != null) {
+          remainingChats = data['remaining_chats'];
+        }
       } else {
         chatHistory.add({"sender": "ai", "text": "Sorry, I couldn't process that request."});
       }
