@@ -62,38 +62,36 @@ class ApiProvider extends ChangeNotifier {
     connectionStatus = "Checking server connectivity...";
     notifyListeners();
     
-    Future<bool> checkHealth(String url) async {
+    Future<bool> checkHealth(String url, {int timeoutMs = 5000}) async {
       try {
-        final response = await http.get(Uri.parse('$url/health')).timeout(const Duration(seconds: 5));
+        final response = await http.get(Uri.parse('$url/health')).timeout(Duration(milliseconds: timeoutMs));
         return response.statusCode == 200;
       } catch (_) {
         return false;
       }
     }
 
-    // Ping both endpoints in parallel
-    final results = await Future.wait([
-      checkHealth(_localUrl),
-      checkHealth(_cloudUrl),
-    ]);
-
-    final isLocalAlive = results[0];
-    final isCloudAlive = results[1];
-
-    if (isLocalAlive) {
-      baseUrl = _localUrl;
-      connectionStatus = "Connected to local server!";
-      print("Connected to LOCAL server at $baseUrl");
-    } else if (isCloudAlive) {
+    // Ping cloud first
+    bool isCloudAlive = await checkHealth(_cloudUrl, timeoutMs: 5000);
+    
+    if (isCloudAlive) {
       baseUrl = _cloudUrl;
       connectionStatus = "Connected to cloud server!";
       print("Connected to CLOUD server at $baseUrl");
     } else {
-      connectionStatus = "Server unreachable.";
-      error = "Cannot access server. Please check your internet connection.";
-      _setLoading(false);
-      notifyListeners();
-      throw Exception(error); // Bubble up so dependent API calls stop
+      // If cloud fails, try local
+      bool isLocalAlive = await checkHealth(_localUrl, timeoutMs: 800);
+      if (isLocalAlive) {
+        baseUrl = _localUrl;
+        connectionStatus = "Connected to local server!";
+        print("Connected to LOCAL server at $baseUrl");
+      } else {
+        connectionStatus = "Server unreachable.";
+        error = "Cannot access server. Please check your internet connection.";
+        _setLoading(false);
+        notifyListeners();
+        throw Exception(error); // Bubble up so dependent API calls stop
+      }
     }
     notifyListeners();
     
