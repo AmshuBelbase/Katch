@@ -359,6 +359,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
+                setState(() { _recordDuration = 0; });
                 final id = await saveFuture;
                 if (id != null) {
                   api.deleteMemory(id);
@@ -379,6 +380,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context);
+                setState(() { _recordDuration = 0; });
                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved automatically!')));
               },
               child: const Text('Looks Good'),
@@ -404,12 +406,16 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context), 
+              onPressed: () {
+                Navigator.pop(context);
+                setState(() { _recordDuration = 0; });
+              }, 
               child: const Text('Cancel Edit'),
             ),
             ElevatedButton(
               onPressed: () async {
                 Navigator.pop(context);
+                setState(() { _recordDuration = 0; });
                 final newText = editController.text.trim();
                 if (newText.isNotEmpty && newText != currentText) {
                   final id = await saveFuture;
