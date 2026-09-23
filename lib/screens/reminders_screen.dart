@@ -228,8 +228,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
             onDismissed: (direction) {
               api.deleteReminder(item['id'].toString());
             },
-            child: Card(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: InkWell(
+              onTap: () => _showNoteDialog(context, item, api),
+              child: Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: ListTile(
                 leading: Checkbox(
                   value: item['is_completed'] == true,
@@ -289,10 +291,51 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 ),
               ),
             ),
+            ),
           );
         },
         childCount: items.length,
       ),
+    );
+  }
+
+  void _showNoteDialog(BuildContext context, dynamic item, ApiProvider api) {
+    final rawText = item['memories']?['raw_text'] ?? 'Original note not found.';
+    final memoryId = item['memory_id']?.toString();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            'Original Note',
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
+          ),
+          content: SingleChildScrollView(
+            child: Text(rawText),
+          ),
+          actions: [
+            if (memoryId != null)
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                tooltip: 'Delete entirely',
+                onPressed: () async {
+                  Navigator.of(context).pop();
+                  final success = await api.deleteMemory(memoryId);
+                  if (success) {
+                    api.fetchReminders();
+                  }
+                },
+              ),
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
