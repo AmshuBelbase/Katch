@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../widgets/app_drawer.dart';
+import '../utils/undo_helper.dart';
 
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
@@ -226,7 +227,14 @@ class _RemindersScreenState extends State<RemindersScreen> {
               child: const Icon(Icons.delete, color: Colors.white),
             ),
             onDismissed: (direction) {
-              api.deleteReminder(item['id'].toString());
+              final itemId = item['id'].toString();
+              api.hideReminderOptimistically(itemId);
+              UndoHelper.showUndoDeleteSnackbar(
+                context: context,
+                itemName: 'Reminder',
+                onUndo: () => api.fetchReminders(),
+                onExecute: () => api.deleteReminder(itemId),
+              );
             },
             child: InkWell(
               onTap: () => _showNoteDialog(context, item, api),
@@ -315,23 +323,40 @@ class _RemindersScreenState extends State<RemindersScreen> {
             child: Text(rawText),
           ),
           actions: [
-            if (memoryId != null)
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                tooltip: 'Delete entirely',
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  final success = await api.deleteMemory(memoryId);
-                  if (success) {
-                    api.fetchReminders();
-                  }
-                },
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (memoryId != null)
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      tooltip: 'Delete entirely',
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        api.hideMemoryOptimistically(memoryId);
+                        UndoHelper.showUndoDeleteSnackbar(
+                          context: context,
+                          itemName: 'Note',
+                          onUndo: () {
+                            api.fetchMemories();
+                            api.fetchReminders();
+                            api.fetchTransactions();
+                          },
+                          onExecute: () => api.deleteMemory(memoryId),
+                        );
+                      },
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  TextButton(
+                    child: const Text('Close'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
               ),
-            TextButton(
-              child: const Text('Close'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
             ),
           ],
         );

@@ -758,6 +758,30 @@ class ApiProvider extends ChangeNotifier {
   }
 
   // --- HELPER ---
+  void hideMemoryOptimistically(String memoryId) {
+    memories.removeWhere((m) => m['id'].toString() == memoryId);
+    reminders.removeWhere((r) => r['memory_id'].toString() == memoryId);
+    transactions.removeWhere((t) => t['memory_id'].toString() == memoryId);
+    notifyListeners();
+  }
+
+  void hideMultipleMemoriesOptimistically(List<String> memoryIds) {
+    memories.removeWhere((m) => memoryIds.contains(m['id'].toString()));
+    reminders.removeWhere((r) => memoryIds.contains(r['memory_id'].toString()));
+    transactions.removeWhere((t) => memoryIds.contains(t['memory_id'].toString()));
+    notifyListeners();
+  }
+
+  void hideReminderOptimistically(String id) {
+    reminders.removeWhere((r) => r['id'].toString() == id);
+    notifyListeners();
+  }
+
+  void hideTransactionOptimistically(String id) {
+    transactions.removeWhere((t) => t['id'].toString() == id);
+    notifyListeners();
+  }
+
   void _setLoading(bool val) {
     isLoading = val;
     notifyListeners();

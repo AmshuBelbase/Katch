@@ -8,6 +8,7 @@ import 'dart:math';
 import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../widgets/app_drawer.dart';
+import '../utils/undo_helper.dart';
 
 class MemoriesScreen extends StatefulWidget {
   const MemoriesScreen({super.key});
@@ -74,20 +75,24 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
             ? [
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.redAccent),
-                  onPressed: () async {
+                  onPressed: () {
                     final api = Provider.of<ApiProvider>(context, listen: false);
                     final count = _selectedMemoryIds.length;
-                    final success = await api.deleteMultipleMemories(_selectedMemoryIds.toList());
+                    final idsToDelete = _selectedMemoryIds.toList();
+                    api.hideMultipleMemoriesOptimistically(idsToDelete);
                     setState(() {
                       _selectedMemoryIds.clear();
                     });
-                    if (context.mounted) {
-                      if (success) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Deleted $count notes successfully.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete notes.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
-                      }
-                    }
+                    UndoHelper.showUndoDeleteSnackbar(
+                      context: context,
+                      itemName: '$count notes',
+                      onUndo: () {
+                        api.fetchMemories();
+                        api.fetchReminders();
+                        api.fetchTransactions();
+                      },
+                      onExecute: () => api.deleteMultipleMemories(idsToDelete),
+                    );
                   },
                 ),
               ]
@@ -549,14 +554,17 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                             padding: EdgeInsets.zero,
                           onSelected: (val) async {
                             if (val == 'delete') {
-                              final success = await api.deleteMemory(memoryId);
-                              if (context.mounted) {
-                                if (success) {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note deleted.'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete note.'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
-                                }
-                              }
+                              api.hideMemoryOptimistically(memoryId);
+                              UndoHelper.showUndoDeleteSnackbar(
+                                context: context,
+                                itemName: 'Note',
+                                onUndo: () {
+                                  api.fetchMemories();
+                                  api.fetchReminders();
+                                  api.fetchTransactions();
+                                },
+                                onExecute: () => api.deleteMemory(memoryId),
+                              );
                             } else if (val == 'edit') {
                               _showEditDialog(context, memory, api);
                             }

@@ -10,6 +10,7 @@ import 'dart:async';
 import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../widgets/app_drawer.dart';
+import '../utils/undo_helper.dart';
 import 'dart:math';
 
 class AddScreen extends StatefulWidget {
@@ -367,10 +368,13 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
                 setState(() { _recordDuration = 0; });
                 final id = await saveFuture;
                 if (id != null) {
-                  api.deleteMemory(id);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Note discarded')));
-                  }
+                  api.hideMemoryOptimistically(id);
+                  UndoHelper.showUndoDeleteSnackbar(
+                    context: context,
+                    itemName: 'Draft note',
+                    onUndo: () => api.fetchMemories(),
+                    onExecute: () => api.deleteMemory(id),
+                  );
                 }
               },
               child: const Text('Discard', style: TextStyle(color: Colors.red)),

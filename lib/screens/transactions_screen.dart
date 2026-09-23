@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../widgets/app_drawer.dart';
+import '../utils/undo_helper.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -343,7 +344,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     child: const Icon(Icons.delete, color: Colors.white),
                   ),
                   onDismissed: (direction) {
-                    Provider.of<ApiProvider>(context, listen: false).deleteTransaction(t['id'].toString());
+                    final itemId = t['id'].toString();
+                    Provider.of<ApiProvider>(context, listen: false).hideTransactionOptimistically(itemId);
+                    UndoHelper.showUndoDeleteSnackbar(
+                      context: context,
+                      itemName: 'Transaction',
+                      onUndo: () => Provider.of<ApiProvider>(context, listen: false).fetchTransactions(),
+                      onExecute: () => Provider.of<ApiProvider>(context, listen: false).deleteTransaction(itemId),
+                    );
                   },
                   child: InkWell(
                     onTap: () => _showNoteDialog(context, t, Provider.of<ApiProvider>(context, listen: false)),
@@ -792,7 +800,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               child: const Icon(Icons.delete, color: Colors.white),
             ),
             onDismissed: (direction) {
-              Provider.of<ApiProvider>(context, listen: false).deleteTransaction(t['id'].toString());
+              final itemId = t['id'].toString();
+              Provider.of<ApiProvider>(context, listen: false).hideTransactionOptimistically(itemId);
+              UndoHelper.showUndoDeleteSnackbar(
+                context: context,
+                itemName: 'Transaction',
+                onUndo: () => Provider.of<ApiProvider>(context, listen: false).fetchTransactions(),
+                onExecute: () => Provider.of<ApiProvider>(context, listen: false).deleteTransaction(itemId),
+              );
             },
             child: InkWell(
               onTap: () => _showNoteDialog(context, t, Provider.of<ApiProvider>(context, listen: false)),
@@ -910,23 +925,40 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             child: Text(rawText),
           ),
           actions: [
-            if (memoryId != null)
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                tooltip: 'Delete entirely',
-                onPressed: () async {
-                  Navigator.of(context).pop();
-                  final success = await api.deleteMemory(memoryId);
-                  if (success) {
-                    api.fetchTransactions();
-                  }
-                },
+            SizedBox(
+              width: MediaQuery.of(context).size.width,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  if (memoryId != null)
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      tooltip: 'Delete entirely',
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        api.hideMemoryOptimistically(memoryId);
+                        UndoHelper.showUndoDeleteSnackbar(
+                          context: context,
+                          itemName: 'Note',
+                          onUndo: () {
+                            api.fetchMemories();
+                            api.fetchReminders();
+                            api.fetchTransactions();
+                          },
+                          onExecute: () => api.deleteMemory(memoryId),
+                        );
+                      },
+                    )
+                  else
+                    const SizedBox.shrink(),
+                  TextButton(
+                    child: const Text('Close'),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
               ),
-            TextButton(
-              child: const Text('Close'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
             ),
           ],
         );
