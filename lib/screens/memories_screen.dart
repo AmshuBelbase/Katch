@@ -18,8 +18,8 @@ class MemoriesScreen extends StatefulWidget {
 
 class _MemoriesScreenState extends State<MemoriesScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _filter = 'All';
-  final List<String> _filters = ['All', 'Audio', 'Text', 'Starred'];
+  String _filter = 'Recent';
+  final List<String> _filters = ['Recent', 'All', 'Audio', 'Text', 'Starred'];
   DateTime? _selectedChartDate;
   
   Set<String> _selectedMemoryIds = {};
@@ -154,6 +154,15 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
 
               if (_filter != 'All') {
                 chartMemories = chartMemories.where((m) {
+                  if (_filter == 'Recent') {
+                    if (m['created_at'] == null) return false;
+                    DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+                    final now = DateTime.now();
+                    final today = DateTime(now.year, now.month, now.day);
+                    final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
+                    final difference = today.difference(createdDate).inDays;
+                    return difference >= 0 && difference < 7;
+                  }
                   if (_filter == 'Audio') return (m['source'] ?? '').toLowerCase() == 'audio';
                   if (_filter == 'Text') return (m['source'] ?? '').toLowerCase() == 'text';
                   if (_filter == 'Starred') return m['is_starred'] == true;
@@ -206,6 +215,15 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               // Apply Chip Filter
               if (_filter != 'All') {
                 displayMemories = displayMemories.where((m) {
+                  if (_filter == 'Recent') {
+                    if (m['created_at'] == null) return false;
+                    DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+                    final now = DateTime.now();
+                    final today = DateTime(now.year, now.month, now.day);
+                    final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
+                    final difference = today.difference(createdDate).inDays;
+                    return difference >= 0 && difference < 7;
+                  }
                   if (_filter == 'Audio') return (m['source'] ?? '').toLowerCase() == 'audio';
                   if (_filter == 'Text') return (m['source'] ?? '').toLowerCase() == 'text';
                   if (_filter == 'Starred') return m['is_starred'] == true;
