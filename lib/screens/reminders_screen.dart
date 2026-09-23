@@ -77,6 +77,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
           List<dynamic> upcoming = [];
           List<dynamic> completedToday = [];
           List<dynamic> completedPast = [];
+          List<dynamic> noDeadlines = [];
 
           for (var r in api.reminders) {
             DateTime dueUtc = DateTime.parse(r['due_datetime']);
@@ -86,22 +87,30 @@ class _RemindersScreenState extends State<RemindersScreen> {
             }
             DateTime dueLocal = dueUtc.toLocal();
             
+            bool isNoDeadline = dueUtc.year >= 2099;
+            
             if (_selectedDate != null) {
               if (dueLocal.year != _selectedDate!.year || 
                   dueLocal.month != _selectedDate!.month || 
                   dueLocal.day != _selectedDate!.day) {
                 continue;
               }
+              if (isNoDeadline) continue; // Hide "no deadline" tasks if a specific date is selected
             }
             
             bool isDueToday = dueLocal.year == nowLocal.year && dueLocal.month == nowLocal.month && dueLocal.day == nowLocal.day;
 
             if (r['is_completed'] == true) {
-              if (isDueToday) {
+              if (isDueToday && !isNoDeadline) {
                 completedToday.add(r);
               } else {
                 completedPast.add(r);
               }
+              continue;
+            }
+            
+            if (isNoDeadline) {
+              noDeadlines.add(r);
               continue;
             }
             
@@ -165,6 +174,11 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 _buildSectionHeader('Completed', Colors.grey.shade500),
               if (completedList.isNotEmpty)
                 _buildList(completedList, api),
+
+              if (noDeadlines.isNotEmpty)
+                _buildSectionHeader('No deadlines', Colors.grey.shade600),
+              if (noDeadlines.isNotEmpty)
+                _buildList(noDeadlines, api),
                 
               const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
             ],
@@ -195,9 +209,11 @@ class _RemindersScreenState extends State<RemindersScreen> {
           final item = items[index];
           DateTime dueUtc = DateTime.parse(item['due_datetime']);
           DateTime dueLocal = dueUtc.toLocal();
-          String formattedDue = DateFormat('MMM d, h:mm a').format(dueLocal);
           
-          bool isOverdue = dueUtc.isBefore(DateTime.now().toUtc());
+          bool isNoDeadline = dueUtc.year >= 2099;
+          String formattedDue = isNoDeadline ? 'No deadline' : DateFormat('MMM d, h:mm a').format(dueLocal);
+          
+          bool isOverdue = !isNoDeadline && dueUtc.isBefore(DateTime.now().toUtc());
 
           return Dismissible(
             key: Key(item['id'].toString()),
@@ -234,7 +250,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                     color: item['is_completed'] == true ? Colors.grey : Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                subtitle: Row(
+                subtitle: isNoDeadline ? null : Row(
                   children: [
                     Icon(Icons.calendar_today, size: 12, color: isOverdue ? AppTheme.error : Colors.grey),
                     const SizedBox(width: 4),

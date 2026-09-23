@@ -760,7 +760,7 @@ class ApiProvider extends ChangeNotifier {
         if (!dueUtc.isUtc) dueUtc = DateTime.parse('${r['due_datetime']}Z');
         DateTime dueLocal = dueUtc.toLocal();
         
-        if (dueLocal.isAfter(DateTime.now())) {
+        if (dueLocal.isAfter(DateTime.now()) && dueLocal.year < 2099) {
           int id = r['id'].toString().hashCode.abs() % 100000;
           validAlarmIds.add(id);
           
