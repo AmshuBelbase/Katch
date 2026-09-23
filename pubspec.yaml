@@ -18,6 +18,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # of the product and file versions while build-number is used as the build suffix.
 version: 1.1.1+12
 
+# flutter build apk --release
+# Rename-Item build\app\outputs\flutter-apk\app-release.apk katch-v1.1.1.apk 
+# gh release create v1.0.11 build\app\outputs\flutter-apk\katch-v1.0.11.apk --title "v1.0.11" --notes "Faster Load"
+
 environment:
   sdk: ^3.12.1
 
