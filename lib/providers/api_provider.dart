@@ -554,7 +554,8 @@ class ApiProvider extends ChangeNotifier {
         headers: _headers,
         body: json.encode({
           'is_completed': isCompleted,
-          'status': status
+          'status': status,
+          'timezone_offset': _getTimezoneOffset()
         }),
       );
       if (response.statusCode == 200) {
