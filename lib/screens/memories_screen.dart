@@ -124,7 +124,34 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: FilterChip(
-                        label: Text(f),
+                        label: Builder(
+                          builder: (ctx) {
+                            String labelText = f;
+                            if (_filter == f) {
+                              final api = Provider.of<ApiProvider>(ctx);
+                              int count = api.memories.where((m) {
+                                if (_searchController.text.isNotEmpty) {
+                                  if (!(m['raw_text'] ?? '').toLowerCase().contains(_searchController.text.toLowerCase())) return false;
+                                }
+                                if (f == 'Recent') {
+                                  if (m['created_at'] == null) return false;
+                                  DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+                                  final now = DateTime.now();
+                                  final today = DateTime(now.year, now.month, now.day);
+                                  final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
+                                  final difference = today.difference(createdDate).inDays;
+                                  return difference >= 0 && difference < 7;
+                                }
+                                if (f == 'Audio') return (m['source'] ?? '').toLowerCase() == 'audio';
+                                if (f == 'Text') return (m['source'] ?? '').toLowerCase() == 'text';
+                                if (f == 'Starred') return m['is_starred'] == true;
+                                return true;
+                              }).length;
+                              labelText = '$f ($count)';
+                            }
+                            return Text(labelText);
+                          }
+                        ),
                         selected: _filter == f,
                         onSelected: (bool selected) {
                           setState(() => _filter = f);
