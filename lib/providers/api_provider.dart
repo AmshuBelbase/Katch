@@ -175,20 +175,43 @@ class ApiProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> addExpenseCategory(String name) async {
+  Future<Map<String, dynamic>> addExpenseCategory(String name) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/expense_categories'),
         headers: _headers,
         body: json.encode({'name': name}),
       );
+      final data = json.decode(response.body);
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
         expenseCategories.add(data['category']);
         notifyListeners();
+        return {'status': 'success'};
+      } else {
+        return {'status': 'error', 'message': data['detail'] ?? 'Failed to add category'};
       }
     } catch (e) {
       print('Failed to add expense category: $e');
+      return {'status': 'error', 'message': e.toString()};
+    }
+  }
+
+  Future<Map<String, dynamic>> deleteExpenseCategory(String name) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/expense_categories/$name'),
+        headers: _headers,
+      );
+      final data = json.decode(response.body);
+      if (response.statusCode == 200) {
+        expenseCategories.removeWhere((c) => c['name'] == name);
+        notifyListeners();
+        return {'status': 'success'};
+      } else {
+        return {'status': 'error', 'message': data['detail'] ?? 'Failed to delete category'};
+      }
+    } catch (e) {
+      return {'status': 'error', 'message': e.toString()};
     }
   }
 

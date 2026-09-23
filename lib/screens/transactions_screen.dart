@@ -30,32 +30,79 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   void _showAddCategoryDialog(ApiProvider api) {
-    TextEditingController catController = TextEditingController();
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: const Text('Add Custom Category'),
-          content: TextField(
-            controller: catController,
-            decoration: const InputDecoration(hintText: 'e.g. Subscriptions'),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context), 
-              child: const Text('Cancel')
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (catController.text.isNotEmpty) {
-                  api.addExpenseCategory(catController.text);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Save'),
-            )
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            TextEditingController catController = TextEditingController();
+            bool isLoading = false;
+            
+            return AlertDialog(
+              title: const Text('Manage Categories'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: api.expenseCategories.length,
+                        itemBuilder: (context, index) {
+                          final cat = api.expenseCategories[index];
+                          final isCustom = cat['user_id'] != null;
+                          return ListTile(
+                            title: Text(cat['name']),
+                            trailing: isCustom 
+                                ? IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () async {
+                                      setState(() => isLoading = true);
+                                      final res = await api.deleteExpenseCategory(cat['name']);
+                                      if (res['status'] != 'success' && context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
+                                      }
+                                      setState(() => isLoading = false);
+                                    },
+                                  )
+                                : null,
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: catController,
+                      decoration: const InputDecoration(hintText: 'Add new (e.g. Subscriptions)'),
+                      maxLength: 30,
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context), 
+                  child: const Text('Done')
+                ),
+                ElevatedButton(
+                  onPressed: isLoading ? null : () async {
+                    if (catController.text.isNotEmpty) {
+                      setState(() => isLoading = true);
+                      final res = await api.addExpenseCategory(catController.text);
+                      if (res['status'] != 'success' && context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'])));
+                      } else {
+                        catController.clear();
+                      }
+                      setState(() => isLoading = false);
+                    }
+                  },
+                  child: isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('Add'),
+                )
+              ],
+            );
+          }
         );
       }
     );
