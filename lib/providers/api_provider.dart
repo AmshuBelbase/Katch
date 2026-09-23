@@ -558,6 +558,10 @@ class ApiProvider extends ChangeNotifier {
         }),
       );
       if (response.statusCode == 200) {
+        if (isCompleted && reminders[index]['recurrence_rule'] != null) {
+          await _fetchRemindersInternal();
+          notifyListeners();
+        }
         return true;
       } else {
         // Revert on failure

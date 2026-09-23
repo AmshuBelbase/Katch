@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../theme.dart';
+import 'package:alarm/alarm.dart';
 import '../providers/api_provider.dart';
 import '../screens/settings_screen.dart';
 
@@ -87,6 +88,7 @@ class AppDrawer extends StatelessWidget {
               if (token != null && context.mounted) {
                 await Provider.of<ApiProvider>(context, listen: false).removeFcmToken(token);
               }
+              await Alarm.stopAll();
               await Supabase.instance.client.auth.signOut();
             },
           ),

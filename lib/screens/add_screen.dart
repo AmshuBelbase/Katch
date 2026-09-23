@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:record/record.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:alarm/alarm.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:async';
@@ -186,6 +187,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
               if (token != null && context.mounted) {
                 await Provider.of<ApiProvider>(context, listen: false).removeFcmToken(token);
               }
+              await Alarm.stopAll();
               await Supabase.instance.client.auth.signOut();
             },
           ),

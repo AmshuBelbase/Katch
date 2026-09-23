@@ -179,9 +179,31 @@ class _DashboardShellState extends State<DashboardShell> {
             content: Text(alarmSettings.notificationSettings.body.isNotEmpty ? alarmSettings.notificationSettings.body : "A scheduled reminder is due!"),
             actions: [
               TextButton(
-                onPressed: () {
-                  Alarm.stop(alarmSettings.id);
+                onPressed: () async {
+                  await Alarm.stop(alarmSettings.id);
                   Navigator.pop(context);
+                  
+                  // Find the reminder ID associated with this local alarm ID
+                  final apiProvider = Provider.of<ApiProvider>(context, listen: false);
+                  String? reminderId;
+                  for (var r in apiProvider.reminders) {
+                    if (r['id'].toString().hashCode.abs() % 100000 == alarmSettings.id) {
+                      reminderId = r['id'];
+                      break;
+                    }
+                  }
+                  
+                  if (reminderId != null) {
+                    // Find the existing status to pass to updateReminderSettings
+                    String existingStatus = 'pending';
+                    for (var r in apiProvider.reminders) {
+                      if (r['id'] == reminderId) {
+                        existingStatus = r['status'] ?? 'pending';
+                        break;
+                      }
+                    }
+                    await apiProvider.updateReminderSettings(reminderId, true, existingStatus);
+                  }
                 },
                 child: const Text("Stop Alarm"),
               )

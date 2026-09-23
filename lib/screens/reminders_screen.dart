@@ -271,6 +271,11 @@ class _RemindersScreenState extends State<RemindersScreen> {
                         fontSize: 12,
                       ),
                     ),
+                    if (item['recurrence_rule'] != null)
+                      const Padding(
+                        padding: EdgeInsets.only(left: 6),
+                        child: Icon(Icons.repeat, size: 14, color: Colors.blueGrey),
+                      ),
                   ],
                 ),
                 trailing: PopupMenuButton<String>(
