@@ -283,6 +283,22 @@ class ApiProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> removeFcmToken(String token) async {
+    await initFuture;
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/fcm-token'),
+        headers: _headers,
+        body: json.encode({'token': token, 'timezone_offset': _getTimezoneOffset()}),
+      );
+      if (response.statusCode != 200) {
+        print('Failed to remove FCM token: ${response.body}');
+      }
+    } catch (e) {
+      print('Error removing FCM token: $e');
+    }
+  }
+
   Future<String?> transcribeAudio(String filePath) async {
     await initFuture;
     _setLoading(true);

@@ -1,7 +1,10 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../theme.dart';
+import '../providers/api_provider.dart';
 import '../screens/settings_screen.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -80,6 +83,10 @@ class AppDrawer extends StatelessWidget {
             leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.primary),
             title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w500)),
             onTap: () async {
+              String? token = await FirebaseMessaging.instance.getToken();
+              if (token != null && context.mounted) {
+                await Provider.of<ApiProvider>(context, listen: false).removeFcmToken(token);
+              }
               await Supabase.instance.client.auth.signOut();
             },
           ),

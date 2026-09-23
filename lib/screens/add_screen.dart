@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:record/record.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:async';
@@ -180,6 +181,10 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
             icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7)),
             label: Text('Sign Out', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7))),
             onPressed: () async {
+              String? token = await FirebaseMessaging.instance.getToken();
+              if (token != null && context.mounted) {
+                await Provider.of<ApiProvider>(context, listen: false).removeFcmToken(token);
+              }
               await Supabase.instance.client.auth.signOut();
             },
           ),
