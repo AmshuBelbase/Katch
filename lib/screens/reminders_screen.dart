@@ -167,17 +167,17 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 _buildList(today, api),
                 
               if (upcoming.isNotEmpty)
-                _buildSectionHeader('Upcoming', Colors.grey.shade700),
+                _buildSectionHeader('Upcoming', Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
               if (upcoming.isNotEmpty)
                 _buildList(upcoming, api),
                 
               if (completedList.isNotEmpty)
-                _buildSectionHeader('Completed', Colors.grey.shade500),
+                _buildSectionHeader('Completed', Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
               if (completedList.isNotEmpty)
                 _buildList(completedList, api),
 
               if (noDeadlines.isNotEmpty)
-                _buildSectionHeader('No deadlines', Colors.grey.shade600),
+                _buildSectionHeader('No deadlines', Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               if (noDeadlines.isNotEmpty)
                 _buildList(noDeadlines, api),
                 
@@ -447,7 +447,7 @@ class _TaskCalendarState extends State<TaskCalendar> {
         mainAxisSize: MainAxisSize.min,
         children: [
           SizedBox(
-            height: 320,
+            height: 380,
             child: PageView.builder(
               controller: _pageController,
               itemBuilder: (context, index) {
