@@ -108,8 +108,56 @@ class _DashboardShellState extends State<DashboardShell> {
     final screen = message.data['screen'];
     if (screen == 'reminders') {
       setState(() => _currentIndex = 3);
+    } else if (screen == 'daily_drop') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        showDialog(
+          context: context,
+          builder: (context) => Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                gradient: LinearGradient(
+                  colors: [Colors.deepPurple.shade50, Colors.white],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.wb_sunny, color: Colors.orangeAccent, size: 48),
+                  const SizedBox(height: 16),
+                  Text(
+                    message.data['title'] ?? 'Daily Drop',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    message.data['content'] ?? 'Your day is ready!',
+                    style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                    ),
+                    child: const Text("Let's Go!", style: TextStyle(fontSize: 16)),
+                  )
+                ],
+              ),
+            ),
+          ),
+        );
+      });
     }
-    // Add more screen mappings here as needed
   }
 
   @override

@@ -273,7 +273,7 @@ class ApiProvider extends ChangeNotifier {
       final response = await http.post(
         Uri.parse('$baseUrl/fcm-token'),
         headers: _headers,
-        body: json.encode({'token': token}),
+        body: json.encode({'token': token, 'timezone_offset': _getTimezoneOffset()}),
       );
       if (response.statusCode != 200) {
         print('Failed to register FCM token: ${response.body}');
