@@ -126,7 +126,13 @@ class ApiProvider extends ChangeNotifier {
       if (response.statusCode == 200) {
         var responseData = await response.stream.bytesToString();
         var jsonResponse = json.decode(responseData);
-        await fetchMemories();
+        
+        if (jsonResponse['memory'] != null) memories.insert(0, jsonResponse['memory']);
+        if (jsonResponse['reminders'] != null) reminders.addAll(jsonResponse['reminders']);
+        if (jsonResponse['transactions'] != null) transactions.addAll(jsonResponse['transactions']);
+        
+        _syncAlarms();
+        notifyListeners();
         return jsonResponse['saved_text'] ?? jsonResponse['transcription'];
       }
       error = "Failed to upload audio (HTTP ${response.statusCode})";
@@ -239,7 +245,10 @@ class ApiProvider extends ChangeNotifier {
       );
       final data = json.decode(response.body);
       if (response.statusCode == 200 && data['status'] == 'success') {
-        await _fetchRemindersInternal();
+        if (data['reminders'] != null) {
+          reminders.addAll(data['reminders']);
+          _syncAlarms();
+        }
         notifyListeners();
       }
       return data;
@@ -257,7 +266,7 @@ class ApiProvider extends ChangeNotifier {
       );
       final data = json.decode(response.body);
       if (response.statusCode == 200 && data['status'] == 'success') {
-        await _fetchTransactionsInternal();
+        if (data['transactions'] != null) transactions.addAll(data['transactions']);
         notifyListeners();
       }
       return data;
@@ -354,8 +363,14 @@ class ApiProvider extends ChangeNotifier {
         }),
       );
       if (response.statusCode == 200) {
-        await fetchMemories(); // Refresh list
         var jsonResponse = json.decode(response.body);
+        
+        if (jsonResponse['memory'] != null) memories.insert(0, jsonResponse['memory']);
+        if (jsonResponse['reminders'] != null) reminders.addAll(jsonResponse['reminders']);
+        if (jsonResponse['transactions'] != null) transactions.addAll(jsonResponse['transactions']);
+        
+        _syncAlarms();
+        notifyListeners();
         return jsonResponse['database_id']?.toString();
       }
       error = "Failed to save memory";
@@ -420,7 +435,10 @@ class ApiProvider extends ChangeNotifier {
         }),
       );
       if (response.statusCode == 200) {
-        await fetchMemories();
+        // Just update the text locally to avoid fetching all memories
+        int index = memories.indexWhere((m) => m['id'].toString() == id);
+        if (index != -1) memories[index]['raw_text'] = newText;
+        notifyListeners();
         return true;
       }
       return false;
@@ -438,7 +456,7 @@ class ApiProvider extends ChangeNotifier {
     try {
       final response = await http.delete(Uri.parse('$baseUrl/memory/$id'), headers: _headers);
       if (response.statusCode == 200) {
-        await fetchMemories();
+        // The optimistic update already deleted it locally, no need to fetch
         return true;
       }
       return false;
@@ -460,7 +478,6 @@ class ApiProvider extends ChangeNotifier {
         body: json.encode({'ids': ids}),
       );
       if (response.statusCode == 200) {
-        await fetchMemories();
         return true;
       }
       return false;

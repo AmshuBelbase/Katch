@@ -142,8 +142,13 @@ class _RemindersScreenState extends State<RemindersScreen> {
             completedList.addAll(completedPast.take(needed));
           }
 
-          return CustomScrollView(
-            slivers: [
+          return RefreshIndicator(
+            onRefresh: () async {
+              await api.fetchReminders();
+            },
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
               SliverToBoxAdapter(
                 child: TaskCalendar(
                   reminders: api.reminders,
