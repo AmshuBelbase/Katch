@@ -8,6 +8,7 @@ import 'package:alarm/alarm.dart' hide NotificationSettings;
 import 'screens/auth_screen.dart';
 import 'screens/splash_screen.dart';
 import 'providers/api_provider.dart';
+import 'providers/theme_provider.dart';
 import 'theme.dart';
 import 'screens/add_screen.dart';
 import 'screens/memories_screen.dart';
@@ -44,6 +45,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ApiProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const VoiceMemoryApp(),
     ),
@@ -95,13 +97,17 @@ class VoiceMemoryApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Katch',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      home: const SplashScreen(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Katch',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: themeProvider.themeMode,
+          home: const SplashScreen(),
+        );
+      },
     );
   }
 }

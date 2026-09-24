@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../providers/theme_provider.dart';
 import '../theme.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -203,8 +205,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   child: Text('App Experience', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
                 ),
                 Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.school),
+                  child: Column(
+                    children: [
+                      Consumer<ThemeProvider>(
+                        builder: (context, themeProvider, child) {
+                          return ListTile(
+                            leading: const Icon(Icons.palette),
+                            title: const Text('Theme'),
+                            trailing: DropdownButton<ThemeMode>(
+                              value: themeProvider.themeMode,
+                              onChanged: (ThemeMode? newMode) {
+                                if (newMode != null) {
+                                  themeProvider.setThemeMode(newMode);
+                                }
+                              },
+                              items: const [
+                                DropdownMenuItem(value: ThemeMode.system, child: Text('System Default')),
+                                DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
+                                DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
+                              ],
+                              underline: const SizedBox(),
+                            ),
+                          );
+                        }
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.school),
                     title: const Text('Reset Tutorial'),
                     subtitle: const Text('Play the coach mark tutorial again'),
                     trailing: const Icon(Icons.refresh),
@@ -232,6 +259,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (mounted) setState(() => _isLoading = false);
                       }
                     },
+                  ),
+                    ],
                   ),
                 ),
               ],
