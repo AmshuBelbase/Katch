@@ -206,7 +206,12 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               }
 
               return SliverToBoxAdapter(
-                child: _buildActivityChart(chartMemories),
+                child: CustomShowcase(
+                  showcaseKey: TutorialKeys.noteChartKey,
+                  title: 'Activity Chart',
+                  description: 'Click a bar in the last 7 days visualizer to filter notes for that day. Click again to clear.',
+                  child: _buildActivityChart(chartMemories),
+                ),
               );
             },
           ),
@@ -512,83 +517,26 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   ),
                   Row(
                     children: [
-                      IconButton(
-                        icon: Icon(
-                          api.reminders.any((r) => r['memory_id'] == memoryId) ? Icons.alarm_on : Icons.add_alarm, 
-                          color: api.reminders.any((r) => r['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
-                          size: 20
-                        ),
-                        onPressed: () async {
-                          if (!api.reminders.any((r) => r['memory_id'] == memoryId)) {
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) => const Center(child: CircularProgressIndicator()),
-                            );
-                            final res = await api.forceExtractReminder(memoryId);
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                              if (res['status'] == 'error') {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Error'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Success'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
-                              }
-                            }
-                          }
-                        },
-                        tooltip: api.reminders.any((r) => r['memory_id'] == memoryId) ? 'Reminder added' : 'Add to Reminders',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          api.transactions.any((t) => t['memory_id'] == memoryId) ? Icons.monetization_on : Icons.add_card, 
-                          color: api.transactions.any((t) => t['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
-                          size: 20
-                        ),
-                        onPressed: () async {
-                          if (!api.transactions.any((t) => t['memory_id'] == memoryId)) {
-                            showDialog(
-                              context: context,
-                              barrierDismissible: false,
-                              builder: (context) => const Center(child: CircularProgressIndicator()),
-                            );
-                            final res = await api.forceExtractFinance(memoryId);
-                            if (context.mounted) {
-                              Navigator.of(context).pop();
-                              if (res['status'] == 'error') {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Error'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Success'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
-                              }
-                            }
-                          }
-                        },
-                        tooltip: api.transactions.any((t) => t['memory_id'] == memoryId) ? 'Finance added' : 'Add to Finance',
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          isStarred ? Icons.star : Icons.star_border,
-                          color: isStarred ? Colors.amber : Colors.grey,
-                          size: 20
-                        ),
-                        onPressed: () async {
-                          bool success = await api.toggleStarMemory(memoryId, !isStarred);
-                          if (!success && context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text("Couldn't star due to a connection problem."),
-                                duration: Duration(seconds: 2),
-                                behavior: SnackBarBehavior.floating,
-                              ),
-                            );
-                          }
-                        },
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                      ),
+                      isFirst ? CustomShowcase(
+                        showcaseKey: TutorialKeys.noteAlarmIconKey,
+                        title: 'Manual Reminder',
+                        description: 'Shows if AI extracted a reminder. Tap to force retry.',
+                        child: _buildAlarmIcon(memoryId, api, context),
+                      ) : _buildAlarmIcon(memoryId, api, context),
+                      isFirst ? CustomShowcase(
+                        showcaseKey: TutorialKeys.noteWalletIconKey,
+                        title: 'Manual Finance',
+                        description: 'Shows if AI extracted a transaction. Tap to force retry.',
+                        child: _buildWalletIcon(memoryId, api, context),
+                      ) : _buildWalletIcon(memoryId, api, context),
+                      isFirst ? CustomShowcase(
+                        showcaseKey: TutorialKeys.noteStarIconKey,
+                        title: 'Star Note',
+                        description: 'Tap here to mark this note as important.',
+                        child: _buildStarIcon(memoryId, isStarred, api, context),
+                      ) : _buildStarIcon(memoryId, isStarred, api, context),
+                    ],
+                  ),
                       if (!_isSelectionMode)
                         Builder(
                           builder: (context) {
@@ -637,9 +585,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                           }
                         )
                     ],
-                  )
-                ],
-              ),
+                  ),
             const SizedBox(height: 8),
             Text(
               memory['raw_text'] ?? '',
@@ -692,6 +638,91 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
           ],
         );
       }
+    );
+  }
+  Widget _buildAlarmIcon(String memoryId, ApiProvider api, BuildContext context) {
+    return IconButton(
+      icon: Icon(
+        api.reminders.any((r) => r['memory_id'] == memoryId) ? Icons.alarm_on : Icons.add_alarm, 
+        color: api.reminders.any((r) => r['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
+        size: 20
+      ),
+      onPressed: () async {
+        if (!api.reminders.any((r) => r['memory_id'] == memoryId)) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const Center(child: CircularProgressIndicator()),
+          );
+          final res = await api.forceExtractReminder(memoryId);
+          if (context.mounted) {
+            Navigator.of(context).pop();
+            if (res['status'] == 'error') {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Error'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Success'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+            }
+          }
+        }
+      },
+      tooltip: api.reminders.any((r) => r['memory_id'] == memoryId) ? 'Reminder added' : 'Add to Reminders',
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+    );
+  }
+
+  Widget _buildWalletIcon(String memoryId, ApiProvider api, BuildContext context) {
+    return IconButton(
+      icon: Icon(
+        api.transactions.any((t) => t['memory_id'] == memoryId) ? Icons.monetization_on : Icons.add_card, 
+        color: api.transactions.any((t) => t['memory_id'] == memoryId) ? AppTheme.successColor(context) : Colors.grey, 
+        size: 20
+      ),
+      onPressed: () async {
+        if (!api.transactions.any((t) => t['memory_id'] == memoryId)) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => const Center(child: CircularProgressIndicator()),
+          );
+          final res = await api.forceExtractFinance(memoryId);
+          if (context.mounted) {
+            Navigator.of(context).pop();
+            if (res['status'] == 'error') {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Error'), backgroundColor: AppTheme.error, behavior: SnackBarBehavior.floating));
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Success'), backgroundColor: AppTheme.success, behavior: SnackBarBehavior.floating));
+            }
+          }
+        }
+      },
+      tooltip: api.transactions.any((t) => t['memory_id'] == memoryId) ? 'Finance added' : 'Add to Finance',
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+    );
+  }
+
+  Widget _buildStarIcon(String memoryId, bool isStarred, ApiProvider api, BuildContext context) {
+    return IconButton(
+      icon: Icon(
+        isStarred ? Icons.star : Icons.star_border,
+        color: isStarred ? Colors.amber : Colors.grey,
+        size: 20
+      ),
+      onPressed: () async {
+        bool success = await api.toggleStarMemory(memoryId, !isStarred);
+        if (!success && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Couldn't star due to a connection problem."),
+              duration: Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      },
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
     );
   }
 }

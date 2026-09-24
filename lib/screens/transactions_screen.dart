@@ -253,6 +253,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _buildPersonalTab(ApiProvider api) {
+    bool hasSeenTutorial = Supabase.instance.client.auth.currentUser?.userMetadata?['has_seen_initial_onboarding'] == true;
+    
     final now = DateTime.now();
     final personalTx = api.transactions.where((t) {
       if (t['transaction_type'] != 'expense' && t['transaction_type'] != 'income') return false;
@@ -269,6 +271,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       }
       return true;
     }).toList();
+    
+    if (personalTx.isEmpty && !hasSeenTutorial) {
+      personalTx.add({
+        'id': 'dummy_personal',
+        'amount': 150.0,
+        'transaction_type': 'expense',
+        'category': 'Food',
+        'description': 'Dummy food expense',
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+      });
+    }
 
     double totalIncome = 0;
     double totalExpense = 0;
@@ -298,7 +311,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           child: CustomShowcase(
             showcaseKey: TutorialKeys.financeCardKey,
             title: 'Finance Overview',
-            description: 'Your income and expenses are automatically categorized from your voice notes.',
+            description: 'Your income and expenses are automatically categorized from your notes.',
             child: _buildCashFlowHeader(netBalance, totalIncome, totalExpense),
           )
         ),
@@ -315,16 +328,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 CustomShowcase(
                   showcaseKey: TutorialKeys.financeAddKey,
                   title: 'Custom Categories',
-                  description: 'Add your own categories to keep everything organized. That’s it for the tutorial!',
-                  isLast: true,
-                  onNextOverride: () async {
-                    await Supabase.instance.client.auth.updateUser(
-                      UserAttributes(data: {'has_seen_initial_onboarding': true}),
-                    );
-                    if (context.mounted) {
-                      ShowCaseWidget.of(context).dismiss();
-                    }
-                  },
+                  description: 'Add your own categories as required to keep expenses organized.',
                   child: TextButton.icon(
                     onPressed: () => _showAddCategoryDialog(api),
                     icon: const Icon(Icons.add, size: 16),
@@ -356,7 +360,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 DateTime date = t['created_at'] != null ? DateTime.parse(t['created_at']).toLocal() : DateTime.now();
                 bool isIncome = t['transaction_type'] == 'income';
 
-                return Dismissible(
+                Widget dismissibleWidget = Dismissible(
                   key: Key(t['id'].toString()),
                   direction: DismissDirection.endToStart,
                   background: Container(
@@ -368,6 +372,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ),
                   onDismissed: (direction) {
                     final itemId = t['id'].toString();
+                    if (itemId.startsWith('dummy')) return;
+                    
                     Provider.of<ApiProvider>(context, listen: false).hideTransactionOptimistically(itemId);
                     UndoHelper.showUndoDeleteSnackbar(
                       context: context,
@@ -377,7 +383,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     );
                   },
                   child: InkWell(
-                    onTap: () => _showNoteDialog(context, t, Provider.of<ApiProvider>(context, listen: false)),
+                    onTap: () {
+                      if (t['id'].toString().startsWith('dummy')) return;
+                      _showNoteDialog(context, t, Provider.of<ApiProvider>(context, listen: false));
+                    },
                     child: Card(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                       color: Theme.of(context).colorScheme.surface,
@@ -396,6 +405,13 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                   ),
                   ),
                 );
+                
+                return index == 0 ? CustomShowcase(
+                  showcaseKey: TutorialKeys.financeTransactionDeleteKey,
+                  title: 'Manage Transactions',
+                  description: 'Swipe left to delete a transaction, or tap it to view and delete the original note.',
+                  child: dismissibleWidget,
+                ) : dismissibleWidget;
               },
               childCount: personalTx.length,
             ),
@@ -490,7 +506,27 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Expense Breakdown', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Expense Breakdown', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              CustomShowcase(
+                showcaseKey: TutorialKeys.financeChartToggleKey,
+                title: 'Visualization Type',
+                description: 'Click here to switch between Pie Chart and Bar Chart views.',
+                child: IconButton(
+                  icon: Icon(_showChart ? Icons.bar_chart : Icons.pie_chart, size: 20),
+                  onPressed: () {
+                    setState(() {
+                      _showChart = !_showChart;
+                    });
+                  },
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 20),
           if (_showChart)
              _buildPieChartWithLegend(categoryTotals, totalExpense)
@@ -637,7 +673,21 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   // ================= SPLITWISE MODE =================
 
   Widget _buildSplitwiseTab(ApiProvider api) {
-    final splits = api.transactions.where((t) => t['transaction_type'] == 'split' || t['transaction_type'] == null).toList();
+    bool hasSeenTutorial = Supabase.instance.client.auth.currentUser?.userMetadata?['has_seen_initial_onboarding'] == true;
+    
+    List<dynamic> splits = List.from(api.transactions.where((t) => t['transaction_type'] == 'split' || t['transaction_type'] == null));
+    
+    if (splits.isEmpty && !hasSeenTutorial) {
+      splits.add({
+        'id': 'dummy_split',
+        'amount': 50.0,
+        'transaction_type': 'split',
+        'creditor': 'self',
+        'debtor': 'Alice',
+        'description': 'Lunch',
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+      });
+    }
 
     double totalInflow = 0; 
     double totalOutflow = 0; 
@@ -712,7 +762,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 double balance = personBalances[person]!;
                 List<dynamic> history = personHistory[person] ?? [];
                 
-                return _buildPersonExpandableCard(person, balance, history);
+                return _buildPersonExpandableCard(person, balance, history, isFirstPerson: index == 0);
               },
               childCount: personBalances.length,
             ),
@@ -789,7 +839,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
-  Widget _buildPersonExpandableCard(String person, double balance, List<dynamic> history) {
+  Widget _buildPersonExpandableCard(String person, double balance, List<dynamic> history, {bool isFirstPerson = false}) {
     final currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
     bool owesYou = balance >= 0;
     
@@ -813,7 +863,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           bool isPositive = creditor.toLowerCase() == 'self';
           DateTime date = t['created_at'] != null ? DateTime.parse(t['created_at']).toLocal() : DateTime.now();
 
-          return Dismissible(
+          int histIndex = history.indexOf(t);
+          Widget dismissibleWidget = Dismissible(
             key: Key(t['id'].toString()),
             direction: DismissDirection.endToStart,
             background: Container(
@@ -824,6 +875,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
             onDismissed: (direction) {
               final itemId = t['id'].toString();
+              if (itemId.startsWith('dummy')) return;
+              
               Provider.of<ApiProvider>(context, listen: false).hideTransactionOptimistically(itemId);
               UndoHelper.showUndoDeleteSnackbar(
                 context: context,
@@ -833,7 +886,10 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               );
             },
             child: InkWell(
-              onTap: () => _showNoteDialog(context, t, Provider.of<ApiProvider>(context, listen: false)),
+              onTap: () {
+                 if (t['id'].toString().startsWith('dummy')) return;
+                 _showNoteDialog(context, t, Provider.of<ApiProvider>(context, listen: false));
+              },
               child: Container(
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
               child: ListTile(
@@ -848,6 +904,22 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
             ),
           );
+
+          return histIndex == 0 && isFirstPerson ? CustomShowcase(
+            showcaseKey: TutorialKeys.splitwiseDeleteKey,
+            title: 'Manage Splitwise',
+            description: 'Swipe to delete a specific transaction with a person, or tap it to open the original note. That\'s it for the tutorial!',
+            isLast: true,
+            onNextOverride: () async {
+                await Supabase.instance.client.auth.updateUser(
+                  UserAttributes(data: {'has_seen_initial_onboarding': true}),
+                );
+                if (context.mounted) {
+                  ShowCaseWidget.of(context).dismiss();
+                }
+            },
+            child: dismissibleWidget,
+          ) : dismissibleWidget;
         }).toList(),
       ),
     );
@@ -884,30 +956,43 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             child: Row(
               children: [
                 Expanded(
-                  child: SegmentedButton<int>(
-                    segments: const [
-                      ButtonSegment(value: 0, label: Text('Personal')),
-                      ButtonSegment(value: 1, label: Text('Splitwise')),
-                    ],
-                    selected: {_currentMode},
-                    onSelectionChanged: (Set<int> newSelection) {
-                      setState(() {
-                        _currentMode = newSelection.first;
-                      });
+                  child: CustomShowcase(
+                    showcaseKey: TutorialKeys.financeSplitwiseTabKey,
+                    title: 'Splitwise Mode',
+                    description: 'Track shared expenses with friends. Click here to see your Splitwise tab!',
+                    onNextOverride: () {
+                       setState(() { _currentMode = 1; });
+                       Future.delayed(const Duration(milliseconds: 300), () {
+                          if (mounted) {
+                             ShowCaseWidget.of(context).next();
+                          }
+                       });
                     },
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return Theme.of(context).colorScheme.primary;
-                        }
-                        return Theme.of(context).colorScheme.surface;
-                      }),
-                      foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                        if (states.contains(WidgetState.selected)) {
-                          return Theme.of(context).colorScheme.onPrimary;
-                        }
-                        return Theme.of(context).colorScheme.onBackground;
-                      }),
+                    child: SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 0, label: Text('Personal')),
+                        ButtonSegment(value: 1, label: Text('Splitwise')),
+                      ],
+                      selected: {_currentMode},
+                      onSelectionChanged: (Set<int> newSelection) {
+                        setState(() {
+                          _currentMode = newSelection.first;
+                        });
+                      },
+                      style: ButtonStyle(
+                        backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return Theme.of(context).colorScheme.primary;
+                          }
+                          return Theme.of(context).colorScheme.surface;
+                        }),
+                        foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return Theme.of(context).colorScheme.onPrimary;
+                          }
+                          return Theme.of(context).colorScheme.onBackground;
+                        }),
+                      ),
                     ),
                   ),
                 ),

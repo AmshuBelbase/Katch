@@ -8,6 +8,7 @@ import '../widgets/app_drawer.dart';
 import '../utils/undo_helper.dart';
 import '../tutorial_keys.dart';
 import '../widgets/custom_showcase.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:showcaseview/showcaseview.dart';
 
 class RemindersScreen extends StatefulWidget {
@@ -67,11 +68,20 @@ class _RemindersScreenState extends State<RemindersScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (api.reminders.isEmpty) {
-            return const Center(child: Text("No upcoming tasks."));
+          bool hasSeenTutorial = Supabase.instance.client.auth.currentUser?.userMetadata?['has_seen_initial_onboarding'] == true;
+
+          List<dynamic> displayReminders = List.from(api.reminders);
+          if (displayReminders.isEmpty && !hasSeenTutorial) {
+            displayReminders.add({
+              'id': 'dummy',
+              'task_name': 'Sample Task',
+              'due_datetime': DateTime.now().toUtc().add(const Duration(hours: 2)).toIso8601String(),
+              'is_completed': false,
+              'recurrence_rule': 'FREQ=DAILY',
+              'status': 'both',
+            });
           }
 
-          // Categorize
           final nowUtc = DateTime.now().toUtc();
           final nowLocal = DateTime.now();
           
@@ -83,7 +93,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
           List<dynamic> completedPast = [];
           List<dynamic> noDeadlines = [];
 
-          for (var r in api.reminders) {
+          for (var r in displayReminders) {
             DateTime dueUtc = DateTime.parse(r['due_datetime']);
             // Fallback: if not UTC, assume it is UTC (sometimes backend sends without Z)
             if (!dueUtc.isUtc) {
@@ -145,6 +155,12 @@ class _RemindersScreenState extends State<RemindersScreen> {
             completedList.addAll(completedPast.take(needed));
           }
 
+          List<List<dynamic>> allLists = [overdue, inAnHour, today, upcoming, completedList, noDeadlines];
+          List<dynamic>? firstNonEmptyList;
+          for (var l in allLists) {
+             if (l.isNotEmpty) { firstNonEmptyList = l; break; }
+          }
+
           return RefreshIndicator(
             onRefresh: () async {
               await api.fetchReminders();
@@ -156,11 +172,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 child: CustomShowcase(
                   showcaseKey: TutorialKeys.reminderCardKey,
                   title: 'Task Calendar',
-                  description: 'Keep track of your deadlines here. The AI sets up reminders from your notes automatically!',
-                  onNextOverride: () {
-                    ShowCaseWidget.of(context).dismiss();
-                    TutorialKeys.dashboardShellKey.currentState?.continueTutorialToFinance();
-                  },
+                  description: 'Click on any date to filter reminders for that day. Click again to clear.',
                   child: TaskCalendar(
                     reminders: api.reminders,
                     selectedDate: _selectedDate,
@@ -171,32 +183,32 @@ class _RemindersScreenState extends State<RemindersScreen> {
               if (overdue.isNotEmpty)
                 _buildSectionHeader('Overdue', AppTheme.error),
               if (overdue.isNotEmpty)
-                _buildList(overdue, api),
+                _buildList(overdue, api, isFirstList: overdue == firstNonEmptyList),
                 
               if (inAnHour.isNotEmpty)
                 _buildSectionHeader('In an hour', Colors.orange),
               if (inAnHour.isNotEmpty)
-                _buildList(inAnHour, api),
+                _buildList(inAnHour, api, isFirstList: inAnHour == firstNonEmptyList),
                 
               if (today.isNotEmpty)
                 _buildSectionHeader('Today', Theme.of(context).colorScheme.primary),
               if (today.isNotEmpty)
-                _buildList(today, api),
+                _buildList(today, api, isFirstList: today == firstNonEmptyList),
                 
               if (upcoming.isNotEmpty)
                 _buildSectionHeader('Upcoming', Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
               if (upcoming.isNotEmpty)
-                _buildList(upcoming, api),
+                _buildList(upcoming, api, isFirstList: upcoming == firstNonEmptyList),
                 
               if (completedList.isNotEmpty)
                 _buildSectionHeader('Completed', Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
               if (completedList.isNotEmpty)
-                _buildList(completedList, api),
+                _buildList(completedList, api, isFirstList: completedList == firstNonEmptyList),
 
               if (noDeadlines.isNotEmpty)
                 _buildSectionHeader('No deadlines', Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               if (noDeadlines.isNotEmpty)
-                _buildList(noDeadlines, api),
+                _buildList(noDeadlines, api, isFirstList: noDeadlines == firstNonEmptyList),
                 
               const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
             ],
@@ -221,7 +233,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     );
   }
 
-  Widget _buildList(List<dynamic> items, ApiProvider api) {
+  Widget _buildList(List<dynamic> items, ApiProvider api, {bool isFirstList = false}) {
     return SliverList(
       delegate: SliverChildBuilderDelegate(
         (context, index) {
@@ -246,6 +258,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
             ),
             onDismissed: (direction) {
               final itemId = item['id'].toString();
+              if (itemId == 'dummy') return;
+              
               api.hideReminderOptimistically(itemId);
               UndoHelper.showUndoDeleteSnackbar(
                 context: context,
@@ -255,13 +269,33 @@ class _RemindersScreenState extends State<RemindersScreen> {
               );
             },
             child: InkWell(
-              onTap: () => _showNoteDialog(context, item, api),
+              onTap: () {
+                if (item['id'].toString() == 'dummy') return;
+                _showNoteDialog(context, item, api);
+              },
               child: Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: ListTile(
-                leading: Checkbox(
+                leading: index == 0 && isFirstList ? CustomShowcase(
+                  showcaseKey: TutorialKeys.reminderCheckboxKey,
+                  title: 'Complete Tasks',
+                  description: 'Check off a task to mark it as completed. It will automatically move to the Completed section.',
+                  child: Checkbox(
+                    value: item['is_completed'] == true,
+                    onChanged: (val) {
+                      if (item['id'].toString() == 'dummy') return;
+                      if (val != null) {
+                        api.updateReminderSettings(item['id'].toString(), val, item['status'] ?? 'pending');
+                      }
+                    },
+                    activeColor: AppTheme.success,
+                    checkColor: Theme.of(context).colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                  ),
+                ) : Checkbox(
                   value: item['is_completed'] == true,
                   onChanged: (val) {
+                    if (item['id'].toString() == 'dummy') return;
                     if (val != null) {
                       api.updateReminderSettings(item['id'].toString(), val, item['status'] ?? 'pending');
                     }
@@ -290,13 +324,50 @@ class _RemindersScreenState extends State<RemindersScreen> {
                       ),
                     ),
                     if (item['recurrence_rule'] != null)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 6),
-                        child: Icon(Icons.repeat, size: 14, color: Colors.blueGrey),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 6),
+                        child: index == 0 && isFirstList ? CustomShowcase(
+                          showcaseKey: TutorialKeys.reminderRecurringIconKey,
+                          title: 'Recurring Tasks',
+                          description: 'This icon indicates if a reminder repeats automatically.',
+                          child: const Icon(Icons.repeat, size: 14, color: Colors.blueGrey)
+                        ) : const Icon(Icons.repeat, size: 14, color: Colors.blueGrey),
                       ),
                   ],
                 ),
-                trailing: PopupMenuButton<String>(
+                trailing: index == 0 && isFirstList ? CustomShowcase(
+                  showcaseKey: TutorialKeys.reminderAlarmIconKey,
+                  title: 'Notification Type',
+                  description: 'Click here to choose how you want to be notified (Silent, Push, Alarm, or Email).',
+                  onNextOverride: () {
+                    ShowCaseWidget.of(context).dismiss();
+                    TutorialKeys.dashboardShellKey.currentState?.continueTutorialToFinance();
+                  },
+                  child: PopupMenuButton<String>(
+                    icon: _getStatusIcon(item['status']),
+                    onSelected: (String newValue) {
+                      api.updateReminderSettings(item['id'].toString(), item['is_completed'] == true, newValue);
+                    },
+                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'none',
+                        child: Row(children: [Icon(Icons.notifications_off, size: 20, color: Colors.grey), SizedBox(width: 8), Text('Silent')]),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'push_only',
+                        child: Row(children: [Icon(Icons.notifications, size: 20, color: Colors.blue), SizedBox(width: 8), Text('Push Only')]),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'phone',
+                        child: Row(children: [Icon(Icons.alarm, size: 20, color: Colors.orange), SizedBox(width: 8), Text('Push + Alarm')]),
+                      ),
+                      const PopupMenuItem<String>(
+                        value: 'both',
+                        child: Row(children: [Icon(Icons.notifications_active, size: 20, color: Colors.green), SizedBox(width: 8), Text('Push + Alarm + Email')]),
+                      ),
+                    ],
+                  ),
+                ) : PopupMenuButton<String>(
                   icon: _getStatusIcon(item['status']),
                   onSelected: (String newValue) {
                     api.updateReminderSettings(item['id'].toString(), item['is_completed'] == true, newValue);

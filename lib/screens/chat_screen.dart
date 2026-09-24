@@ -56,18 +56,23 @@ class _ChatScreenState extends State<ChatScreen> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        '${api.remainingChats} left',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                    child: CustomShowcase(
+                      showcaseKey: TutorialKeys.chatLimitKey,
+                      title: 'Daily Chat Limit',
+                      description: 'You get 15 free AI chats every day to query your notes and finances.',
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${api.remainingChats} left',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
                         ),
                       ),
                     ),
@@ -91,25 +96,30 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Column(
         children: [
           // Suggestions
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: _suggestions.map((s) {
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ActionChip(
-                    label: Text(s),
-                    onPressed: () => _sendMessage(s),
-                    backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    side: BorderSide.none,
-                    labelStyle: TextStyle(
-                      color: Theme.of(context).colorScheme.onBackground,
-                      fontWeight: FontWeight.w500,
+          CustomShowcase(
+            showcaseKey: TutorialKeys.chatPromptsKey,
+            title: 'Recommended Prompts',
+            description: 'Not sure what to ask? Try one of these quick suggestions to get started!',
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: _suggestions.map((s) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ActionChip(
+                      label: Text(s),
+                      onPressed: () => _sendMessage(s),
+                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      side: BorderSide.none,
+                      labelStyle: TextStyle(
+                        color: Theme.of(context).colorScheme.onBackground,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
           ),
           

@@ -126,6 +126,10 @@ class DashboardShellState extends State<DashboardShell> {
       if (mounted) {
         ShowCaseWidget.of(context).startShowCase([
           TutorialKeys.noteCardKey,
+          TutorialKeys.noteChartKey,
+          TutorialKeys.noteAlarmIconKey,
+          TutorialKeys.noteWalletIconKey,
+          TutorialKeys.noteStarIconKey,
           TutorialKeys.noteDeleteKey,
         ]);
       }
@@ -137,6 +141,8 @@ class DashboardShellState extends State<DashboardShell> {
     Future.delayed(const Duration(milliseconds: 600), () {
       if (mounted) {
         ShowCaseWidget.of(context).startShowCase([
+          TutorialKeys.chatLimitKey,
+          TutorialKeys.chatPromptsKey,
           TutorialKeys.chatInputKey,
         ]);
       }
@@ -149,6 +155,9 @@ class DashboardShellState extends State<DashboardShell> {
       if (mounted) {
         ShowCaseWidget.of(context).startShowCase([
           TutorialKeys.reminderCardKey,
+          TutorialKeys.reminderCheckboxKey,
+          TutorialKeys.reminderRecurringIconKey,
+          TutorialKeys.reminderAlarmIconKey,
         ]);
       }
     });
@@ -160,7 +169,11 @@ class DashboardShellState extends State<DashboardShell> {
       if (mounted) {
         ShowCaseWidget.of(context).startShowCase([
           TutorialKeys.financeCardKey,
+          TutorialKeys.financeChartToggleKey,
+          TutorialKeys.financeTransactionDeleteKey,
           TutorialKeys.financeAddKey,
+          TutorialKeys.financeSplitwiseTabKey,
+          TutorialKeys.splitwiseDeleteKey,
         ]);
       }
     });
