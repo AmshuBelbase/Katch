@@ -14,6 +14,7 @@ import 'screens/memories_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/reminders_screen.dart';
 import 'screens/transactions_screen.dart';
+import 'screens/onboarding_screen.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -74,7 +75,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     if (session == null) {
       return const AuthScreen();
     }
-    return const DashboardShell();
+    return const OnboardingWrapper();
   }
 }
 

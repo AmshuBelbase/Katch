@@ -56,6 +56,8 @@ dependencies:
   url_launcher: ^6.3.2
   open_filex: ^4.7.0
   cron: ^0.6.2
+  shared_preferences: ^2.5.5
+  smooth_page_indicator: ^3.0.0
 
 dev_dependencies:
   flutter_test:
