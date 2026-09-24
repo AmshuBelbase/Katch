@@ -23,7 +23,7 @@ class _ChatScreenState extends State<ChatScreen> {
     "Recent expenses?",
     "Pending tasks?",
     "Summarize my week",
-    "What did I say about Siddhant?"
+    "What did I ask you to remember?"
   ];
 
   void _sendMessage(String text) {
