@@ -324,14 +324,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
                       ),
                     ),
                     if (item['recurrence_rule'] != null)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 6),
-                        child: index == 0 && isFirstList ? CustomShowcase(
-                          showcaseKey: TutorialKeys.reminderRecurringIconKey,
-                          title: 'Recurring Tasks',
-                          description: 'This icon indicates if a reminder repeats automatically.',
-                          child: const Icon(Icons.repeat, size: 14, color: Colors.blueGrey)
-                        ) : const Icon(Icons.repeat, size: 14, color: Colors.blueGrey),
+                      const Padding(
+                        padding: EdgeInsets.only(left: 6),
+                        child: Icon(Icons.repeat, size: 14, color: Colors.blueGrey),
                       ),
                   ],
                 ),

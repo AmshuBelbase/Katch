@@ -953,14 +953,18 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             },
             child: histIndex == 0 && isFirstPerson ? CustomShowcase(
               showcaseKey: TutorialKeys.splitwiseNoteKey,
-              title: 'View Original Note',
-              description: "Tap any transaction to view its original note. You can delete the note from there as well! That's all for the tutorial!",
+              title: 'Manage Transactions',
+              description: "Swipe left to delete a transaction, or tap it to view its original note. You can delete the note from there as well! That's all for the tutorial!",
               isLast: true,
               onNextOverride: () async {
                   await Supabase.instance.client.auth.updateUser(
                     UserAttributes(data: {'has_seen_initial_onboarding': true}),
                   );
                   if (context.mounted) {
+                    final api = Provider.of<ApiProvider>(context, listen: false);
+                    api.fetchMemories();
+                    api.fetchTransactions();
+                    api.fetchReminders();
                     ShowCaseWidget.of(context).dismiss();
                   }
               },
@@ -1038,14 +1042,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             Text('KATCH', style: GoogleFonts.michroma(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Theme.of(context).colorScheme.primary)),
           ],
         ),
-        actions: [
-          if (_currentMode == 0)
-            IconButton(
-              icon: Icon(_showChart ? Icons.bar_chart : Icons.pie_chart),
-              onPressed: () => setState(() => _showChart = !_showChart),
-            ),
-          
-        ],
+        actions: [],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
           child: Padding(
@@ -1059,7 +1056,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     description: 'Track shared expenses with friends. Click here to see your Splitwise tab!',
                     onNextOverride: () {
                        setState(() { _currentMode = 1; });
-                       Future.delayed(const Duration(milliseconds: 300), () {
+                       Future.delayed(const Duration(milliseconds: 500), () {
                           if (mounted) {
                              ShowCaseWidget.of(context).next();
                           }

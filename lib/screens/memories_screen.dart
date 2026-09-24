@@ -210,6 +210,10 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   showcaseKey: TutorialKeys.noteChartKey,
                   title: 'Activity Chart',
                   description: 'Click a bar in the last 7 days visualizer to filter notes for that day. Click again to clear.',
+                  onNextOverride: () {
+                    ShowCaseWidget.of(context).dismiss();
+                    TutorialKeys.dashboardShellKey.currentState?.continueTutorialToChat();
+                  },
                   child: _buildActivityChart(chartMemories),
                 ),
               );
@@ -271,7 +275,8 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 }).toList();
               }
 
-              if (displayMemories.isEmpty) {
+              bool hasSeenTutorial = Supabase.instance.client.auth.currentUser?.userMetadata?['has_seen_initial_onboarding'] == true;
+              if (displayMemories.isEmpty && !hasSeenTutorial) {
                 displayMemories = [{
                   'id': 'dummy',
                   'created_at': DateTime.now().toIso8601String(),

@@ -128,64 +128,98 @@ class DashboardShellState extends State<DashboardShell> {
 
   void continueTutorialToNotes() {
     switchTab(1);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        ShowCaseWidget.of(context).startShowCase([
-          TutorialKeys.noteCardKey,
-          TutorialKeys.noteChartKey,
-          TutorialKeys.noteAlarmIconKey,
-          TutorialKeys.noteWalletIconKey,
-          TutorialKeys.noteStarIconKey,
-          TutorialKeys.noteDeleteKey,
-        ]);
-      }
-    });
+    Future.delayed(const Duration(milliseconds: 500), _startNotesTutorialWhenReady);
+  }
+
+  void _startNotesTutorialWhenReady() {
+    if (!mounted) return;
+    final api = Provider.of<ApiProvider>(context, listen: false);
+    if (api.isLoading) {
+      Future.delayed(const Duration(milliseconds: 500), _startNotesTutorialWhenReady);
+    } else {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          ShowCaseWidget.of(context).startShowCase([
+            TutorialKeys.noteCardKey,
+            TutorialKeys.noteChartKey,
+          ]);
+        }
+      });
+    }
   }
 
   void continueTutorialToChat() {
     switchTab(2);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        ShowCaseWidget.of(context).startShowCase([
-          TutorialKeys.chatLimitKey,
-          TutorialKeys.chatPromptsKey,
-          TutorialKeys.chatInputKey,
-        ]);
-      }
-    });
+    Future.delayed(const Duration(milliseconds: 500), _startChatTutorialWhenReady);
+  }
+
+  void _startChatTutorialWhenReady() {
+    if (!mounted) return;
+    final api = Provider.of<ApiProvider>(context, listen: false);
+    if (api.isLoading) {
+      Future.delayed(const Duration(milliseconds: 500), _startChatTutorialWhenReady);
+    } else {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          ShowCaseWidget.of(context).startShowCase([
+            TutorialKeys.chatLimitKey,
+            TutorialKeys.chatPromptsKey,
+            TutorialKeys.chatInputKey,
+          ]);
+        }
+      });
+    }
   }
 
   void continueTutorialToReminders() {
     switchTab(3);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        ShowCaseWidget.of(context).startShowCase([
-          TutorialKeys.reminderCardKey,
-          TutorialKeys.reminderCheckboxKey,
-          TutorialKeys.reminderRecurringIconKey,
-          TutorialKeys.reminderAlarmIconKey,
-        ]);
-      }
-    });
+    Future.delayed(const Duration(milliseconds: 500), _startRemindersTutorialWhenReady);
+  }
+
+  void _startRemindersTutorialWhenReady() {
+    if (!mounted) return;
+    final api = Provider.of<ApiProvider>(context, listen: false);
+    if (api.isLoading) {
+      Future.delayed(const Duration(milliseconds: 500), _startRemindersTutorialWhenReady);
+    } else {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          ShowCaseWidget.of(context).startShowCase([
+            TutorialKeys.reminderCardKey,
+            TutorialKeys.reminderCheckboxKey,
+            TutorialKeys.reminderAlarmIconKey,
+          ]);
+        }
+      });
+    }
   }
 
   void continueTutorialToFinance() {
     switchTab(4);
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        ShowCaseWidget.of(context).startShowCase([
-          TutorialKeys.financeCardKey,
-          TutorialKeys.financeChartToggleKey,
-          TutorialKeys.financeTransactionDeleteKey,
-          TutorialKeys.financeAddKey,
-          TutorialKeys.financeSplitwiseTabKey,
-          TutorialKeys.splitwiseBalanceKey,
-          TutorialKeys.splitwiseChartKey,
-          TutorialKeys.splitwiseDeleteKey,
-          TutorialKeys.splitwiseNoteKey,
-        ]);
-      }
-    });
+    Future.delayed(const Duration(milliseconds: 500), _startFinanceTutorialWhenReady);
+  }
+
+  void _startFinanceTutorialWhenReady() {
+    if (!mounted) return;
+    final api = Provider.of<ApiProvider>(context, listen: false);
+    if (api.isLoading) {
+      Future.delayed(const Duration(milliseconds: 500), _startFinanceTutorialWhenReady);
+    } else {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (mounted) {
+          ShowCaseWidget.of(context).startShowCase([
+            TutorialKeys.financeCardKey,
+            TutorialKeys.financeChartToggleKey,
+            TutorialKeys.financeAddKey,
+            TutorialKeys.financeTransactionDeleteKey,
+            TutorialKeys.financeSplitwiseTabKey,
+            TutorialKeys.splitwiseBalanceKey,
+            TutorialKeys.splitwiseChartKey,
+            TutorialKeys.splitwiseNoteKey,
+          ]);
+        }
+      });
+    }
   }
   final GlobalKey _addKey = GlobalKey();
   final GlobalKey _notesKey = GlobalKey();

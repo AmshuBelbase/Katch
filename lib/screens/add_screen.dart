@@ -181,21 +181,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
             Text('KATCH', style: GoogleFonts.michroma(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Theme.of(context).colorScheme.primary)),
           ],
         ),
-        actions: [
-          TextButton.icon(
-            icon: Icon(Icons.logout, color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7)),
-            label: Text('Sign Out', style: TextStyle(color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.7))),
-            onPressed: () async {
-              String? token = await FirebaseMessaging.instance.getToken();
-              if (token != null && context.mounted) {
-                await Provider.of<ApiProvider>(context, listen: false).removeFcmToken(token);
-              }
-              await Alarm.stopAll();
-              await Supabase.instance.client.auth.signOut();
-            },
-          ),
-          
-        ],
+        actions: [],
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Theme.of(context).colorScheme.primary,
