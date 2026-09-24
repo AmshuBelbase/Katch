@@ -84,11 +84,12 @@ class AppDrawer extends StatelessWidget {
             leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.primary),
             title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w500)),
             onTap: () async {
+              final api = Provider.of<ApiProvider>(context, listen: false);
               String? token = await FirebaseMessaging.instance.getToken();
               if (token != null && context.mounted) {
-                await Provider.of<ApiProvider>(context, listen: false).removeFcmToken(token);
+                await api.removeFcmToken(token);
               }
-              await Alarm.stopAll();
+              api.clearData();
               await Supabase.instance.client.auth.signOut();
             },
           ),

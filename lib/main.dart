@@ -67,6 +67,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
     super.initState();
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (mounted) {
+        if (data.event == AuthChangeEvent.signedIn || data.event == AuthChangeEvent.initialSession) {
+          final session = Supabase.instance.client.auth.currentSession;
+          if (session != null) {
+            final api = Provider.of<ApiProvider>(context, listen: false);
+            api.fetchMemories();
+            api.fetchReminders();
+            api.fetchTransactions();
+            api.fetchChatStatus();
+          }
+        }
         setState(() {});
       }
     });
@@ -119,8 +129,25 @@ class DashboardShell extends StatefulWidget {
   State<DashboardShell> createState() => DashboardShellState();
 }
 
-class DashboardShellState extends State<DashboardShell> {
+class DashboardShellState extends State<DashboardShell> with WidgetsBindingObserver {
   int _currentIndex = 0;
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Sync alarms and data when app comes to foreground
+      final api = Provider.of<ApiProvider>(context, listen: false);
+      api.fetchReminders();
+      api.fetchMemories();
+      api.fetchTransactions();
+    }
+  }
 
   void switchTab(int index) {
     setState(() => _currentIndex = index);
@@ -286,6 +313,7 @@ class DashboardShellState extends State<DashboardShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _setupFCM();
     _setupAlarmListener();
     _checkOnboarding();
@@ -402,6 +430,17 @@ class DashboardShellState extends State<DashboardShell> {
     // App opened from a notification while in the BACKGROUND
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       _navigateFromMessage(message);
+    });
+
+    // Foreground messages (silently sync data across devices)
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      print("Received foreground message: ${message.messageId}");
+      if (mounted) {
+        final api = Provider.of<ApiProvider>(context, listen: false);
+        api.fetchReminders();
+        api.fetchMemories();
+        api.fetchTransactions();
+      }
     });
 
     // App opened from a notification while TERMINATED (cold start)

@@ -111,7 +111,16 @@ class ApiProvider extends ChangeNotifier {
     _setLoading(false);
   }
 
-
+  void clearData() {
+    memories.clear();
+    reminders.clear();
+    transactions.clear();
+    chatHistory.clear();
+    expenseCategories.clear();
+    remainingChats = 15;
+    Alarm.stopAll();
+    notifyListeners();
+  }
 
   Future<String?> createAudioMemory(String filePath) async {
     await initFuture;
