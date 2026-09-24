@@ -108,7 +108,7 @@ class AppDrawer extends StatelessWidget {
                           height: 16,
                         ),
                         const SizedBox(width: 6),
-                        Text('KATCH', style: GoogleFonts.michroma(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                        Text('KATCH', style: GoogleFonts.michroma(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Theme.of(context).colorScheme.primary)),
                       ],
                     ),
                     const SizedBox(height: 4),

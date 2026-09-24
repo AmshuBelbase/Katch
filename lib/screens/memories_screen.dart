@@ -61,7 +61,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                     height: 24,
                   ),
                   const SizedBox(width: 8),
-                  Text('KATCH', style: GoogleFonts.michroma(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).colorScheme.primary)),
+                  Text('KATCH', style: GoogleFonts.michroma(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Theme.of(context).colorScheme.primary)),
                 ],
               ),
         leading: _isSelectionMode

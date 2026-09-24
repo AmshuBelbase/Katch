@@ -111,18 +111,18 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(
         brightness: Brightness.dark,
-        seedColor: background,
-        primary: background,
-        onPrimary: primary,
-        secondary: background,
+        seedColor: primary,
+        primary: primary,
+        onPrimary: Colors.white,
+        secondary: secondary,
         tertiary: tertiary,
-        background: primary,
-        onBackground: background,
-        surface: const Color(0xFF524082), // Slightly darker purple for surfaces
-        onSurface: background,
+        background: Colors.black,
+        onBackground: Colors.white,
+        surface: const Color(0xFF121212), // True AMOLED black surface contrast
+        onSurface: Colors.white,
         error: error,
       ),
-      scaffoldBackgroundColor: primary,
+      scaffoldBackgroundColor: Colors.black,
       
       // Typography
       fontFamily: 'Roboto',
@@ -132,16 +132,16 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: background.withOpacity(0.1)),
+          side: BorderSide(color: Colors.white.withOpacity(0.05)),
         ),
-        color: const Color(0xFF524082),
+        color: const Color(0xFF121212),
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
       
       // Inputs
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: const Color(0xFF1E1E1E),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
@@ -152,7 +152,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: background, width: 2),
+          borderSide: const BorderSide(color: primary, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
@@ -160,8 +160,8 @@ class AppTheme {
       // Navigation Bar
       navigationBarTheme: NavigationBarThemeData(
         elevation: 0,
-        backgroundColor: const Color(0xFF524082),
-        indicatorColor: background.withOpacity(0.15),
+        backgroundColor: const Color(0xFF121212),
+        indicatorColor: primary.withOpacity(0.2),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
       ),
       
@@ -170,17 +170,17 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
-        backgroundColor: Colors.white.withOpacity(0.1),
-        selectedColor: background.withOpacity(0.2),
-        labelStyle: const TextStyle(fontWeight: FontWeight.w500, color: background),
+        backgroundColor: const Color(0xFF1E1E1E),
+        selectedColor: primary.withOpacity(0.2),
+        labelStyle: const TextStyle(fontWeight: FontWeight.w500, color: Colors.white),
         secondaryLabelStyle: const TextStyle(color: primary),
         side: BorderSide.none,
       ),
       
       // App Bar
       appBarTheme: const AppBarTheme(
-        backgroundColor: primary,
-        foregroundColor: background,
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: false,
         scrolledUnderElevation: 0,
@@ -188,8 +188,8 @@ class AppTheme {
       
       // Floating Action Button
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: background,
-        foregroundColor: primary,
+        backgroundColor: primary,
+        foregroundColor: Colors.white,
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

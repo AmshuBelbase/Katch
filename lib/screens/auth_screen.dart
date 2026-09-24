@@ -119,7 +119,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         style: GoogleFonts.michroma(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ],

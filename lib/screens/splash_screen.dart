@@ -118,7 +118,7 @@ class _SplashScreenState extends State<SplashScreen> {
                           style: GoogleFonts.michroma(
                             fontSize: 40,
                             fontWeight: FontWeight.bold,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ],
