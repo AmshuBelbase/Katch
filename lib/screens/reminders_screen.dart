@@ -188,9 +188,10 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 
               const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
             ],
-          );
-        },
-      ),
+          ),
+        );
+      },
+    ),
     );
   }
 
