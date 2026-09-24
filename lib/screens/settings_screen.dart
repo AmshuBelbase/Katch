@@ -197,6 +197,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ],
+                const SizedBox(height: 24),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Text('App Experience', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.primary)),
+                ),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.school),
+                    title: const Text('Reset Tutorial'),
+                    subtitle: const Text('Play the coach mark tutorial again'),
+                    trailing: const Icon(Icons.refresh),
+                    onTap: () async {
+                      setState(() => _isLoading = true);
+                      try {
+                        await Supabase.instance.client.auth.updateUser(
+                          UserAttributes(data: {
+                            'has_seen_initial_onboarding': false, 
+                            'last_seen_app_version': '0.0.0'
+                          }),
+                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: const Text('Tutorial reset! Restart the app to see it.'), backgroundColor: AppTheme.success),
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.error),
+                          );
+                        }
+                      } finally {
+                        if (mounted) setState(() => _isLoading = false);
+                      }
+                    },
+                  ),
+                ),
               ],
             ),
     );

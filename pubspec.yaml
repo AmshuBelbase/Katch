@@ -58,6 +58,7 @@ dependencies:
   cron: ^0.6.2
   shared_preferences: ^2.5.5
   smooth_page_indicator: ^3.0.0
+  showcaseview: ^5.1.0
 
 dev_dependencies:
   flutter_test:

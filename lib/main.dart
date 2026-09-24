@@ -14,8 +14,8 @@ import 'screens/memories_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/reminders_screen.dart';
 import 'screens/transactions_screen.dart';
-import 'screens/onboarding_screen.dart';
-
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:showcaseview/showcaseview.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -75,7 +75,18 @@ class _AuthWrapperState extends State<AuthWrapper> {
     if (session == null) {
       return const AuthScreen();
     }
-    return const OnboardingWrapper();
+    return ShowCaseWidget(
+      onFinish: () async {
+        final packageInfo = await PackageInfo.fromPlatform();
+        await Supabase.instance.client.auth.updateUser(
+          UserAttributes(data: {
+            'has_seen_initial_onboarding': true,
+            'last_seen_app_version': packageInfo.version,
+          }),
+        );
+      },
+      builder: (context) => const DashboardShell(),
+    );
   }
 }
 
@@ -104,6 +115,11 @@ class DashboardShell extends StatefulWidget {
 
 class _DashboardShellState extends State<DashboardShell> {
   int _currentIndex = 0;
+  final GlobalKey _addKey = GlobalKey();
+  final GlobalKey _notesKey = GlobalKey();
+  final GlobalKey _chatKey = GlobalKey();
+  final GlobalKey _remindersKey = GlobalKey();
+  final GlobalKey _financeKey = GlobalKey();
 
   void _navigateFromMessage(RemoteMessage message) {
     final screen = message.data['screen'];
@@ -166,6 +182,49 @@ class _DashboardShellState extends State<DashboardShell> {
     super.initState();
     _setupFCM();
     _setupAlarmListener();
+    _checkOnboarding();
+  }
+
+  bool _isVersionGreater(String v1, String v2) {
+    List<int> p1 = v1.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    List<int> p2 = v2.split('.').map((e) => int.tryParse(e) ?? 0).toList();
+    for (int i = 0; i < 3; i++) {
+      int p1Val = i < p1.length ? p1[i] : 0;
+      int p2Val = i < p2.length ? p2[i] : 0;
+      if (p1Val > p2Val) return true;
+      if (p1Val < p2Val) return false;
+    }
+    return false;
+  }
+
+  Future<void> _checkOnboarding() async {
+    final user = Supabase.instance.client.auth.currentUser;
+    final metadata = user?.userMetadata ?? {};
+    final hasSeenInitial = metadata['has_seen_initial_onboarding'] ?? false;
+    final lastSeenVersion = metadata['last_seen_app_version'] ?? '0.0.0';
+    
+    final packageInfo = await PackageInfo.fromPlatform();
+    final currentVersion = packageInfo.version;
+
+    if (!hasSeenInitial) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted) {
+          ShowCaseWidget.of(context).startShowCase([_addKey, _notesKey, _chatKey, _remindersKey, _financeKey]);
+        }
+      });
+    } else if (_isVersionGreater(currentVersion, lastSeenVersion)) {
+      if (_isVersionGreater("1.1.2", lastSeenVersion)) {
+         Future.delayed(const Duration(milliseconds: 600), () {
+           if (mounted) {
+             ShowCaseWidget.of(context).startShowCase([_financeKey]);
+           }
+         });
+      } else {
+         Supabase.instance.client.auth.updateUser(
+           UserAttributes(data: {'last_seen_app_version': currentVersion}),
+         );
+      }
+    }
   }
 
   void _setupAlarmListener() {
@@ -270,31 +329,56 @@ class _DashboardShellState extends State<DashboardShell> {
             _currentIndex = index;
           });
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.add_circle_outline),
-            selectedIcon: Icon(Icons.add_circle),
-            label: 'Add',
+        destinations: [
+          Showcase(
+            key: _addKey,
+            title: 'Add Memory',
+            description: 'Record voice or type text here.',
+            child: const NavigationDestination(
+              icon: Icon(Icons.add_circle_outline),
+              selectedIcon: Icon(Icons.add_circle),
+              label: 'Add',
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.view_agenda_outlined),
-            selectedIcon: Icon(Icons.view_agenda),
-            label: 'Notes',
+          Showcase(
+            key: _notesKey,
+            title: 'Notes',
+            description: 'All your organized memories live here.',
+            child: const NavigationDestination(
+              icon: Icon(Icons.view_agenda_outlined),
+              selectedIcon: Icon(Icons.view_agenda),
+              label: 'Notes',
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            selectedIcon: Icon(Icons.auto_awesome),
-            label: 'AI Chat',
+          Showcase(
+            key: _chatKey,
+            title: 'AI Chat',
+            description: 'Ask anything about your past notes.',
+            child: const NavigationDestination(
+              icon: Icon(Icons.auto_awesome_outlined),
+              selectedIcon: Icon(Icons.auto_awesome),
+              label: 'AI Chat',
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.access_time),
-            selectedIcon: Icon(Icons.access_time_filled),
-            label: 'Reminders',
+          Showcase(
+            key: _remindersKey,
+            title: 'Reminders',
+            description: 'Tasks and events extracted automatically.',
+            child: const NavigationDestination(
+              icon: Icon(Icons.access_time),
+              selectedIcon: Icon(Icons.access_time_filled),
+              label: 'Reminders',
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Finance',
+          Showcase(
+            key: _financeKey,
+            title: 'Finance',
+            description: 'Track expenses and splits seamlessly.',
+            child: const NavigationDestination(
+              icon: Icon(Icons.account_balance_wallet_outlined),
+              selectedIcon: Icon(Icons.account_balance_wallet),
+              label: 'Finance',
+            ),
           ),
         ],
       ),
