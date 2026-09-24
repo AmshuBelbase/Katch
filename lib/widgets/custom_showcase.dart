@@ -32,6 +32,7 @@ class CustomShowcase extends StatelessWidget {
   Widget build(BuildContext context) {
     return Showcase.withWidget(
       key: showcaseKey,
+      onBarrierClick: onNextOverride ?? () => ShowCaseWidget.of(context).next(),
       container: Container(
         width: 320,
         padding: const EdgeInsets.all(16),
