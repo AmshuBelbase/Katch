@@ -849,6 +849,60 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     );
   }
 
+  void _showAllTransactionsSheet(BuildContext context, String person, List<dynamic> history) {
+    final currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.6,
+          maxChildSize: 0.9,
+          minChildSize: 0.4,
+          builder: (context, scrollController) {
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text('All transactions with $person', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    itemCount: history.length,
+                    itemBuilder: (context, index) {
+                      var t = history[index];
+                      double amt = double.parse(t['amount'].toString());
+                      String creditor = t['creditor'].toString();
+                      bool isPositive = creditor.toLowerCase() == 'self';
+                      DateTime date = t['created_at'] != null ? DateTime.parse(t['created_at']).toLocal() : DateTime.now();
+                      
+                      return ListTile(
+                        onTap: () {
+                          if (t['id'].toString().startsWith('dummy')) return;
+                          Navigator.pop(context);
+                          _showNoteDialog(context, t, Provider.of<ApiProvider>(context, listen: false));
+                        },
+                        title: Text(t['description'] ?? 'Transaction'),
+                        subtitle: Text(DateFormat('MMM d, h:mm a').format(date)),
+                        trailing: Text(
+                          '${isPositive ? '+' : '-'}${currencyFormatter.format(amt)}',
+                          style: TextStyle(color: isPositive ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _buildPersonExpandableCard(String person, double balance, List<dynamic> history, {bool isFirstPerson = false}) {
     final currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
     bool owesYou = balance >= 0;
@@ -868,13 +922,14 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           owesYou ? 'Owes you ${currencyFormatter.format(balance)}' : 'You owe ${currencyFormatter.format(balance.abs())}',
           style: TextStyle(color: owesYou ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold),
         ),
-        children: history.map((t) {
-          double amt = double.parse(t['amount'].toString());
-          String creditor = t['creditor'].toString();
-          bool isPositive = creditor.toLowerCase() == 'self';
-          DateTime date = t['created_at'] != null ? DateTime.parse(t['created_at']).toLocal() : DateTime.now();
+        children: [
+          ...history.take(3).map((t) {
+            double amt = double.parse(t['amount'].toString());
+            String creditor = t['creditor'].toString();
+            bool isPositive = creditor.toLowerCase() == 'self';
+            DateTime date = t['created_at'] != null ? DateTime.parse(t['created_at']).toLocal() : DateTime.now();
 
-          int histIndex = history.indexOf(t);
+            int histIndex = history.indexOf(t);
           Widget dismissibleWidget = Dismissible(
             key: Key(t['id'].toString()),
             direction: DismissDirection.endToStart,
@@ -947,13 +1002,22 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             ),
           );
 
-          return histIndex == 0 && isFirstPerson ? CustomShowcase(
-            showcaseKey: TutorialKeys.splitwiseDeleteKey,
-            title: 'Manage Splitwise',
-            description: 'Swipe left to delete a specific transaction with a person.',
-            child: dismissibleWidget,
-          ) : dismissibleWidget;
-        }).toList(),
+            return histIndex == 0 && isFirstPerson ? CustomShowcase(
+              showcaseKey: TutorialKeys.splitwiseDeleteKey,
+              title: 'Manage Splitwise',
+              description: 'Swipe left to delete a specific transaction with a person.',
+              child: dismissibleWidget,
+            ) : dismissibleWidget;
+          }),
+          if (history.length > 3)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextButton(
+                onPressed: () => _showAllTransactionsSheet(context, person, history),
+                child: Text('View all ${history.length} transactions...'),
+              ),
+            ),
+        ],
       ),
     );
   }
