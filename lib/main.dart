@@ -16,6 +16,7 @@ import 'screens/reminders_screen.dart';
 import 'screens/transactions_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:showcaseview/showcaseview.dart';
+import 'tutorial_keys.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -80,12 +81,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
         final packageInfo = await PackageInfo.fromPlatform();
         await Supabase.instance.client.auth.updateUser(
           UserAttributes(data: {
-            'has_seen_initial_onboarding': true,
             'last_seen_app_version': packageInfo.version,
           }),
         );
       },
-      builder: (context) => const DashboardShell(),
+      builder: (context) => DashboardShell(key: TutorialKeys.dashboardShellKey),
     );
   }
 }
@@ -110,11 +110,61 @@ class DashboardShell extends StatefulWidget {
   const DashboardShell({super.key});
 
   @override
-  State<DashboardShell> createState() => _DashboardShellState();
+  State<DashboardShell> createState() => DashboardShellState();
 }
 
-class _DashboardShellState extends State<DashboardShell> {
+class DashboardShellState extends State<DashboardShell> {
   int _currentIndex = 0;
+
+  void switchTab(int index) {
+    setState(() => _currentIndex = index);
+  }
+
+  void continueTutorialToNotes() {
+    switchTab(1);
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) {
+        ShowCaseWidget.of(context).startShowCase([
+          TutorialKeys.noteCardKey,
+          TutorialKeys.noteDeleteKey,
+        ]);
+      }
+    });
+  }
+
+  void continueTutorialToChat() {
+    switchTab(2);
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) {
+        ShowCaseWidget.of(context).startShowCase([
+          TutorialKeys.chatInputKey,
+        ]);
+      }
+    });
+  }
+
+  void continueTutorialToReminders() {
+    switchTab(3);
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) {
+        ShowCaseWidget.of(context).startShowCase([
+          TutorialKeys.reminderCardKey,
+        ]);
+      }
+    });
+  }
+
+  void continueTutorialToFinance() {
+    switchTab(4);
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (mounted) {
+        ShowCaseWidget.of(context).startShowCase([
+          TutorialKeys.financeCardKey,
+          TutorialKeys.financeAddKey,
+        ]);
+      }
+    });
+  }
   final GlobalKey _addKey = GlobalKey();
   final GlobalKey _notesKey = GlobalKey();
   final GlobalKey _chatKey = GlobalKey();
@@ -209,14 +259,17 @@ class _DashboardShellState extends State<DashboardShell> {
     if (!hasSeenInitial) {
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
-          ShowCaseWidget.of(context).startShowCase([_addKey, _notesKey, _chatKey, _remindersKey, _financeKey]);
+          ShowCaseWidget.of(context).startShowCase([
+            TutorialKeys.addMicKey,
+            TutorialKeys.addTextKey,
+          ]);
         }
       });
     } else if (_isVersionGreater(currentVersion, lastSeenVersion)) {
       if (_isVersionGreater("1.1.2", lastSeenVersion)) {
          Future.delayed(const Duration(milliseconds: 600), () {
            if (mounted) {
-             ShowCaseWidget.of(context).startShowCase([_financeKey]);
+             // ShowCaseWidget.of(context).startShowCase([_financeKey]); // Temporarily disabled
            }
          });
       } else {
@@ -329,56 +382,31 @@ class _DashboardShellState extends State<DashboardShell> {
             _currentIndex = index;
           });
         },
-        destinations: [
-          Showcase(
-            key: _addKey,
-            title: 'Add Memory',
-            description: 'Record voice or type text here.',
-            child: const NavigationDestination(
-              icon: Icon(Icons.add_circle_outline),
-              selectedIcon: Icon(Icons.add_circle),
-              label: 'Add',
-            ),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.add_circle_outline),
+            selectedIcon: Icon(Icons.add_circle),
+            label: 'Add',
           ),
-          Showcase(
-            key: _notesKey,
-            title: 'Notes',
-            description: 'All your organized memories live here.',
-            child: const NavigationDestination(
-              icon: Icon(Icons.view_agenda_outlined),
-              selectedIcon: Icon(Icons.view_agenda),
-              label: 'Notes',
-            ),
+          NavigationDestination(
+            icon: Icon(Icons.view_agenda_outlined),
+            selectedIcon: Icon(Icons.view_agenda),
+            label: 'Notes',
           ),
-          Showcase(
-            key: _chatKey,
-            title: 'AI Chat',
-            description: 'Ask anything about your past notes.',
-            child: const NavigationDestination(
-              icon: Icon(Icons.auto_awesome_outlined),
-              selectedIcon: Icon(Icons.auto_awesome),
-              label: 'AI Chat',
-            ),
+          NavigationDestination(
+            icon: Icon(Icons.auto_awesome_outlined),
+            selectedIcon: Icon(Icons.auto_awesome),
+            label: 'AI Chat',
           ),
-          Showcase(
-            key: _remindersKey,
-            title: 'Reminders',
-            description: 'Tasks and events extracted automatically.',
-            child: const NavigationDestination(
-              icon: Icon(Icons.access_time),
-              selectedIcon: Icon(Icons.access_time_filled),
-              label: 'Reminders',
-            ),
+          NavigationDestination(
+            icon: Icon(Icons.access_time),
+            selectedIcon: Icon(Icons.access_time_filled),
+            label: 'Reminders',
           ),
-          Showcase(
-            key: _financeKey,
-            title: 'Finance',
-            description: 'Track expenses and splits seamlessly.',
-            child: const NavigationDestination(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              selectedIcon: Icon(Icons.account_balance_wallet),
-              label: 'Finance',
-            ),
+          NavigationDestination(
+            icon: Icon(Icons.account_balance_wallet_outlined),
+            selectedIcon: Icon(Icons.account_balance_wallet),
+            label: 'Finance',
           ),
         ],
       ),

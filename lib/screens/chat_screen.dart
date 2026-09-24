@@ -4,6 +4,9 @@ import 'package:provider/provider.dart';
 import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../widgets/app_drawer.dart';
+import '../tutorial_keys.dart';
+import '../widgets/custom_showcase.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -166,39 +169,48 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           
           // Input Area
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, -5),
-                )
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Ask your AI Assistant...',
-                      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          CustomShowcase(
+            showcaseKey: TutorialKeys.chatInputKey,
+            title: 'AI Chat',
+            description: 'Ask any question about your past notes, tasks, or expenses. The AI knows everything you have recorded!',
+            onNextOverride: () {
+              ShowCaseWidget.of(context).dismiss();
+              TutorialKeys.dashboardShellKey.currentState?.continueTutorialToReminders();
+            },
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  )
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: const InputDecoration(
+                        hintText: 'Ask your AI Assistant...',
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                      onSubmitted: _sendMessage,
                     ),
-                    onSubmitted: _sendMessage,
                   ),
-                ),
-                const SizedBox(width: 12),
-                CircleAvatar(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  child: IconButton(
-                    icon: Icon(Icons.send, color: Theme.of(context).colorScheme.onPrimary, size: 20),
-                    onPressed: () => _sendMessage(_messageController.text),
-                  ),
-                )
-              ],
+                  const SizedBox(width: 12),
+                  CircleAvatar(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    child: IconButton(
+                      icon: Icon(Icons.send, color: Theme.of(context).colorScheme.onPrimary, size: 20),
+                      onPressed: () => _sendMessage(_messageController.text),
+                    ),
+                  )
+                ],
+              ),
             ),
           )
         ],

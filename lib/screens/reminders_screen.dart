@@ -6,6 +6,9 @@ import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../widgets/app_drawer.dart';
 import '../utils/undo_helper.dart';
+import '../tutorial_keys.dart';
+import '../widgets/custom_showcase.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 class RemindersScreen extends StatefulWidget {
   const RemindersScreen({super.key});
@@ -150,11 +153,20 @@ class _RemindersScreenState extends State<RemindersScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
               SliverToBoxAdapter(
-                child: TaskCalendar(
-                  reminders: api.reminders,
-                  selectedDate: _selectedDate,
-                  onDateSelected: _onDateSelected,
-                ),
+                child: CustomShowcase(
+                  showcaseKey: TutorialKeys.reminderCardKey,
+                  title: 'Task Calendar',
+                  description: 'Keep track of your deadlines here. The AI sets up reminders from your notes automatically!',
+                  onNextOverride: () {
+                    ShowCaseWidget.of(context).dismiss();
+                    TutorialKeys.dashboardShellKey.currentState?.continueTutorialToFinance();
+                  },
+                  child: TaskCalendar(
+                    reminders: api.reminders,
+                    selectedDate: _selectedDate,
+                    onDateSelected: _onDateSelected,
+                  ),
+                )
               ),
               if (overdue.isNotEmpty)
                 _buildSectionHeader('Overdue', AppTheme.error),

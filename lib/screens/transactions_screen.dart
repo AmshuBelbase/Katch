@@ -7,6 +7,10 @@ import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../widgets/app_drawer.dart';
 import '../utils/undo_helper.dart';
+import '../tutorial_keys.dart';
+import '../widgets/custom_showcase.dart';
+import 'package:showcaseview/showcaseview.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TransactionsScreen extends StatefulWidget {
   const TransactionsScreen({super.key});
@@ -291,7 +295,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           child: _buildFilterRow(),
         ),
         SliverToBoxAdapter(
-          child: _buildCashFlowHeader(netBalance, totalIncome, totalExpense),
+          child: CustomShowcase(
+            showcaseKey: TutorialKeys.financeCardKey,
+            title: 'Finance Overview',
+            description: 'Your income and expenses are automatically categorized from your voice notes.',
+            child: _buildCashFlowHeader(netBalance, totalIncome, totalExpense),
+          )
         ),
         SliverToBoxAdapter(
           child: _buildExpenseVisualization(categoryTotals, totalExpense),
@@ -303,10 +312,24 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text('Transactions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                TextButton.icon(
-                  onPressed: () => _showAddCategoryDialog(api),
-                  icon: const Icon(Icons.add, size: 16),
-                  label: const Text('Category'),
+                CustomShowcase(
+                  showcaseKey: TutorialKeys.financeAddKey,
+                  title: 'Custom Categories',
+                  description: 'Add your own categories to keep everything organized. That’s it for the tutorial!',
+                  isLast: true,
+                  onNextOverride: () async {
+                    await Supabase.instance.client.auth.updateUser(
+                      UserAttributes(data: {'has_seen_initial_onboarding': true}),
+                    );
+                    if (context.mounted) {
+                      ShowCaseWidget.of(context).dismiss();
+                    }
+                  },
+                  child: TextButton.icon(
+                    onPressed: () => _showAddCategoryDialog(api),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Category'),
+                  ),
                 ),
               ],
             ),

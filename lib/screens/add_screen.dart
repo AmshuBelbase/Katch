@@ -12,6 +12,9 @@ import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../widgets/app_drawer.dart';
 import '../utils/undo_helper.dart';
+import '../tutorial_keys.dart';
+import '../widgets/custom_showcase.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'dart:math';
 
 class AddScreen extends StatefulWidget {
@@ -253,8 +256,19 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
             
           const SizedBox(height: 60),
           if (!_isProcessing)
-            GestureDetector(
-              onTap: () {
+            CustomShowcase(
+              showcaseKey: TutorialKeys.addMicKey,
+              title: 'Voice Recording',
+              description: 'Tap to start recording a voice note. Tap again to stop and save.',
+              onNextOverride: () {
+                 ShowCaseWidget.of(context).dismiss();
+                 _tabController.animateTo(1);
+                 Future.delayed(const Duration(milliseconds: 600), () {
+                   if (mounted) ShowCaseWidget.of(context).startShowCase([TutorialKeys.addTextKey]);
+                 });
+              },
+              child: GestureDetector(
+                onTap: () {
                 setState(() {
                   _isRecording = !_isRecording;
                 });
@@ -283,6 +297,7 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
                 },
               ),
             ),
+          ),
           const SizedBox(height: 20),
           if (_isProcessing)
             const Text(
@@ -307,13 +322,29 @@ class _AddScreenState extends State<AddScreen> with TickerProviderStateMixin {
         children: [
           // Category chips removed
           Expanded(
-            child: TextField(
-              controller: _textController,
-              maxLines: null,
-              expands: true,
-              textAlignVertical: TextAlignVertical.top,
-              decoration: const InputDecoration(
-                hintText: 'What\'s on your mind?',
+            child: CustomShowcase(
+              showcaseKey: TutorialKeys.addTextKey,
+              title: 'Text Notes',
+              description: 'You can also type your thoughts manually.',
+              onNextOverride: () {
+                 ShowCaseWidget.of(context).dismiss();
+                 TutorialKeys.dashboardShellKey.currentState?.continueTutorialToNotes();
+              },
+              onPrevOverride: () {
+                 ShowCaseWidget.of(context).dismiss();
+                 _tabController.animateTo(0);
+                 Future.delayed(const Duration(milliseconds: 600), () {
+                   if (mounted) ShowCaseWidget.of(context).startShowCase([TutorialKeys.addMicKey]);
+                 });
+              },
+              child: TextField(
+                controller: _textController,
+                maxLines: null,
+                expands: true,
+                textAlignVertical: TextAlignVertical.top,
+                decoration: const InputDecoration(
+                  hintText: 'What\'s on your mind?',
+                ),
               ),
             ),
           ),

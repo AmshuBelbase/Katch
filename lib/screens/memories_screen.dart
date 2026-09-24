@@ -9,6 +9,9 @@ import '../providers/api_provider.dart';
 import '../theme.dart';
 import '../widgets/app_drawer.dart';
 import '../utils/undo_helper.dart';
+import '../tutorial_keys.dart';
+import '../widgets/custom_showcase.dart';
+import 'package:showcaseview/showcaseview.dart';
 
 class MemoriesScreen extends StatefulWidget {
   const MemoriesScreen({super.key});
@@ -264,15 +267,28 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               }
 
               if (displayMemories.isEmpty) {
-                return const SliverFillRemaining(
-                  child: Center(child: Text("No notes found.")),
-                );
+                displayMemories = [{
+                  'id': 'dummy',
+                  'created_at': DateTime.now().toIso8601String(),
+                  'source': 'text',
+                  'raw_text': 'This is a sample memory. Our AI automatically extracts tasks and expenses from notes like this!',
+                  'is_starred': false,
+                }];
               }
               
               return SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
-                    return _buildMemoryCard(displayMemories[index], api);
+                    Widget card = _buildMemoryCard(displayMemories[index], api, index == 0);
+                    if (index == 0) {
+                      return CustomShowcase(
+                        showcaseKey: TutorialKeys.noteCardKey,
+                        title: 'Memory Card',
+                        description: 'Your voice and text notes appear here. AI organizes them automatically.',
+                        child: card,
+                      );
+                    }
+                    return card;
                   },
                   childCount: displayMemories.length,
                 ),
@@ -437,7 +453,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
     );
   }
 
-  Widget _buildMemoryCard(dynamic memory, ApiProvider api) {
+  Widget _buildMemoryCard(dynamic memory, ApiProvider api, bool isFirst) {
     DateTime createdAt = DateTime.parse(memory['created_at']).toLocal();
     String formattedDate = DateFormat('MMM d, yyyy • h:mm a').format(createdAt);
     
@@ -574,34 +590,51 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                         constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
                       ),
                       if (!_isSelectionMode)
-                        SizedBox(
-                          width: 28,
-                          height: 28,
-                          child: PopupMenuButton<String>(
-                            padding: EdgeInsets.zero,
-                          onSelected: (val) async {
-                            if (val == 'delete') {
-                              api.hideMemoryOptimistically(memoryId);
-                              UndoHelper.showUndoDeleteSnackbar(
-                                context: context,
-                                itemName: 'Note',
-                                onUndo: () {
-                                  api.fetchMemories();
-                                  api.fetchReminders();
-                                  api.fetchTransactions();
+                        Builder(
+                          builder: (context) {
+                            Widget menu = SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: PopupMenuButton<String>(
+                                padding: EdgeInsets.zero,
+                                onSelected: (val) async {
+                                  if (val == 'delete' && memory['id'] != 'dummy') {
+                                    api.hideMemoryOptimistically(memoryId);
+                                    UndoHelper.showUndoDeleteSnackbar(
+                                      context: context,
+                                      itemName: 'Note',
+                                      onUndo: () {
+                                        api.fetchMemories();
+                                        api.fetchReminders();
+                                        api.fetchTransactions();
+                                      },
+                                      onExecute: () => api.deleteMemory(memoryId),
+                                    );
+                                  } else if (val == 'edit' && memory['id'] != 'dummy') {
+                                    _showEditDialog(context, memory, api);
+                                  }
                                 },
-                                onExecute: () => api.deleteMemory(memoryId),
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                  const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                                ],
+                                icon: const Icon(Icons.more_vert, size: 20),
+                              )
+                            );
+                            if (isFirst) {
+                              return CustomShowcase(
+                                showcaseKey: TutorialKeys.noteDeleteKey,
+                                title: 'Manage Note',
+                                description: 'Tap here to edit or delete your memory.',
+                                onNextOverride: () {
+                                  ShowCaseWidget.of(context).dismiss();
+                                  TutorialKeys.dashboardShellKey.currentState?.continueTutorialToChat();
+                                },
+                                child: menu,
                               );
-                            } else if (val == 'edit') {
-                              _showEditDialog(context, memory, api);
                             }
-                          },
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                            const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
-                          ],
-                          icon: const Icon(Icons.more_vert, size: 20),
-                        )
+                            return menu;
+                          }
                         )
                     ],
                   )
