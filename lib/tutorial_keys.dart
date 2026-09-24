@@ -29,6 +29,9 @@ class TutorialKeys {
   static final GlobalKey financeChartToggleKey = GlobalKey();
   static final GlobalKey financeTransactionDeleteKey = GlobalKey();
   static final GlobalKey financeSplitwiseTabKey = GlobalKey();
+  static final GlobalKey splitwiseBalanceKey = GlobalKey();
+  static final GlobalKey splitwiseChartKey = GlobalKey();
   static final GlobalKey splitwiseDeleteKey = GlobalKey();
+  static final GlobalKey splitwiseNoteKey = GlobalKey();
   static final GlobalKey financeAddKey = GlobalKey();
 }

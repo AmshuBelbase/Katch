@@ -173,7 +173,10 @@ class DashboardShellState extends State<DashboardShell> {
           TutorialKeys.financeTransactionDeleteKey,
           TutorialKeys.financeAddKey,
           TutorialKeys.financeSplitwiseTabKey,
+          TutorialKeys.splitwiseBalanceKey,
+          TutorialKeys.splitwiseChartKey,
           TutorialKeys.splitwiseDeleteKey,
+          TutorialKeys.splitwiseNoteKey,
         ]);
       }
     });

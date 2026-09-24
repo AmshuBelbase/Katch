@@ -718,30 +718,40 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            child: Row(
-              children: [
-                Expanded(child: _buildKPICard('Balance', netBalance, netBalance >= 0 ? AppTheme.successColor(context) : AppTheme.errorColor(context))),
-                const SizedBox(width: 8),
-                Expanded(child: _buildKPICard('Owed to You', totalInflow, AppTheme.successColor(context))),
-                const SizedBox(width: 8),
-                Expanded(child: _buildKPICard('You Owe', totalOutflow, AppTheme.errorColor(context))),
-              ],
+          child: CustomShowcase(
+            showcaseKey: TutorialKeys.splitwiseBalanceKey,
+            title: 'Splitwise Balances',
+            description: 'Balance is your net sum. Owed to You is what friends owe you, and You Owe is what you have to pay back.',
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                children: [
+                  Expanded(child: _buildKPICard('Balance', netBalance, netBalance >= 0 ? AppTheme.successColor(context) : AppTheme.errorColor(context))),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildKPICard('Owed to You', totalInflow, AppTheme.successColor(context))),
+                  const SizedBox(width: 8),
+                  Expanded(child: _buildKPICard('You Owe', totalOutflow, AppTheme.errorColor(context))),
+                ],
+              ),
             ),
           ),
         ),
         SliverToBoxAdapter(
-          child: Container(
-            height: 220,
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
+          child: CustomShowcase(
+            showcaseKey: TutorialKeys.splitwiseChartKey,
+            title: 'Splitwise Visualizer',
+            description: 'This chart visually compares your net balances with each of your friends.',
+            child: Container(
+              height: 220,
+              margin: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
+              ),
+              child: _buildSplitwiseBarChart(personBalances),
             ),
-            child: _buildSplitwiseBarChart(personBalances),
           ),
         ),
         const SliverToBoxAdapter(
@@ -848,6 +858,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       color: Theme.of(context).colorScheme.surface,
       clipBehavior: Clip.antiAlias,
       child: ExpansionTile(
+        initiallyExpanded: isFirstPerson,
         leading: CircleAvatar(
           backgroundColor: owesYou ? AppTheme.successColor(context).withOpacity(0.1) : AppTheme.errorColor(context).withOpacity(0.1),
           child: Text(person.isNotEmpty ? person[0].toUpperCase() : '?', style: TextStyle(color: owesYou ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold)),
@@ -885,39 +896,61 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                 onExecute: () => Provider.of<ApiProvider>(context, listen: false).deleteTransaction(itemId),
               );
             },
-            child: InkWell(
+            child: histIndex == 0 && isFirstPerson ? CustomShowcase(
+              showcaseKey: TutorialKeys.splitwiseNoteKey,
+              title: 'View Original Note',
+              description: "Tap any transaction to view its original note. You can delete the note from there as well! That's all for the tutorial!",
+              isLast: true,
+              onNextOverride: () async {
+                  await Supabase.instance.client.auth.updateUser(
+                    UserAttributes(data: {'has_seen_initial_onboarding': true}),
+                  );
+                  if (context.mounted) {
+                    ShowCaseWidget.of(context).dismiss();
+                  }
+              },
+              child: InkWell(
+                onTap: () {
+                   if (t['id'].toString().startsWith('dummy')) return;
+                   _showNoteDialog(context, t, Provider.of<ApiProvider>(context, listen: false));
+                },
+                child: Container(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
+                  child: ListTile(
+                    dense: true,
+                    title: Text(t['description'] ?? 'Transaction'),
+                    subtitle: Text(DateFormat('MMM d, h:mm a').format(date)),
+                    trailing: Text(
+                      '${isPositive ? '+' : '-'}${currencyFormatter.format(amt)}',
+                      style: TextStyle(color: isPositive ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ) : InkWell(
               onTap: () {
                  if (t['id'].toString().startsWith('dummy')) return;
                  _showNoteDialog(context, t, Provider.of<ApiProvider>(context, listen: false));
               },
               child: Container(
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-              child: ListTile(
-                dense: true,
-                title: Text(t['description'] ?? 'Transaction'),
-                subtitle: Text(DateFormat('MMM d, h:mm a').format(date)),
-                trailing: Text(
-                  '${isPositive ? '+' : '-'}${currencyFormatter.format(amt)}',
-                  style: TextStyle(color: isPositive ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold),
+                child: ListTile(
+                  dense: true,
+                  title: Text(t['description'] ?? 'Transaction'),
+                  subtitle: Text(DateFormat('MMM d, h:mm a').format(date)),
+                  trailing: Text(
+                    '${isPositive ? '+' : '-'}${currencyFormatter.format(amt)}',
+                    style: TextStyle(color: isPositive ? AppTheme.successColor(context) : AppTheme.errorColor(context), fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-            ),
             ),
           );
 
           return histIndex == 0 && isFirstPerson ? CustomShowcase(
             showcaseKey: TutorialKeys.splitwiseDeleteKey,
             title: 'Manage Splitwise',
-            description: 'Swipe to delete a specific transaction with a person, or tap it to open the original note. That\'s it for the tutorial!',
-            isLast: true,
-            onNextOverride: () async {
-                await Supabase.instance.client.auth.updateUser(
-                  UserAttributes(data: {'has_seen_initial_onboarding': true}),
-                );
-                if (context.mounted) {
-                  ShowCaseWidget.of(context).dismiss();
-                }
-            },
+            description: 'Swipe left to delete a specific transaction with a person.',
             child: dismissibleWidget,
           ) : dismissibleWidget;
         }).toList(),
