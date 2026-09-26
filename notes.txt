@@ -1,4 +1,4 @@
-What's New in v1.1.3:
+What's New in v1.1.4:
 
 • Seamless Multi-Device Sync: Reminders, notifications, and alarms now automatically sync across all your logged-in devices in real-time.
 
@@ -7,3 +7,6 @@ What's New in v1.1.3:
 • Accurate AI Chat Limits: Your daily AI chat limits now reliably sync to the cloud across devices.
 
 • Tutorial Polish: Smoother onboarding experience with bug fixes to the interactive tutorials.
+
+• Fixed issue where tutorials were getting closed by clicking on other parts of screen.
+
