@@ -498,29 +498,37 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      if (_isSelectionMode)
-                        Checkbox(
-                          value: isSelected,
-                          onChanged: (val) {
-                            setState(() {
-                              if (val == true) {
-                                _selectedMemoryIds.add(memoryId);
-                              } else {
-                                _selectedMemoryIds.remove(memoryId);
-                              }
-                            });
-                          },
+                  Expanded(
+                    child: Row(
+                      children: [
+                        if (_isSelectionMode)
+                          Checkbox(
+                            value: isSelected,
+                            onChanged: (val) {
+                              setState(() {
+                                if (val == true) {
+                                  _selectedMemoryIds.add(memoryId);
+                                } else {
+                                  _selectedMemoryIds.remove(memoryId);
+                                }
+                              });
+                            },
+                          ),
+                        Icon(isAudio ? Icons.mic : Icons.notes, size: 16, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            formattedDate, 
+                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                      Icon(isAudio ? Icons.mic : Icons.notes, size: 16, color: Colors.grey),
-                      const SizedBox(width: 8),
-                      Text(formattedDate, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                    ],
+                      ],
+                    ),
                   ),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       isFirst ? CustomShowcase(
                         showcaseKey: TutorialKeys.noteAlarmIconKey,
@@ -540,8 +548,6 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                         description: 'Tap here to mark this note as important.',
                         child: _buildStarIcon(memoryId, isStarred, api, context),
                       ) : _buildStarIcon(memoryId, isStarred, api, context),
-                    ],
-                  ),
                       if (!_isSelectionMode)
                         Builder(
                           builder: (context) {
@@ -591,6 +597,8 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                         )
                     ],
                   ),
+                ],
+              ),
             const SizedBox(height: 8),
             Text(
               memory['raw_text'] ?? '',
