@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +11,7 @@ class ApiProvider extends ChangeNotifier {
     return {
       'Content-Type': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
+      'X-Timezone-Offset': _getTimezoneOffset(),
     };
   }
 
@@ -57,6 +59,8 @@ class ApiProvider extends ChangeNotifier {
   }
 
   bool isTutorialActive = false;
+  bool showTimezonePrompt = false;
+  String newTimezoneOffset = "";
 
   void setTutorialActive(bool active) {
     isTutorialActive = active;
@@ -67,6 +71,16 @@ class ApiProvider extends ChangeNotifier {
     _setLoading(true);
     error = null;
     connectionStatus = "Checking server connectivity...";
+    
+    final prefs = await SharedPreferences.getInstance();
+    final currentTz = _getTimezoneOffset();
+    final savedTz = prefs.getString('last_known_timezone');
+    if (savedTz != null && savedTz != currentTz) {
+      showTimezonePrompt = true;
+      newTimezoneOffset = currentTz;
+    } else if (savedTz == null) {
+      await prefs.setString('last_known_timezone', currentTz);
+    }
     
     final user = Supabase.instance.client.auth.currentUser;
     final metadata = user?.userMetadata ?? {};
@@ -121,6 +135,36 @@ class ApiProvider extends ChangeNotifier {
       ]);
     }
     _setLoading(false);
+  }
+
+  Future<void> syncRecurringRemindersTimezone() async {
+    await initFuture;
+    _setLoading(true);
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/reminders/bulk-update-timezone'),
+        headers: _headers,
+        body: json.encode({'new_timezone_offset': newTimezoneOffset}),
+      );
+      if (response.statusCode == 200) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('last_known_timezone', newTimezoneOffset);
+        showTimezonePrompt = false;
+        notifyListeners();
+        await fetchReminders();
+      }
+    } catch (e) {
+      print('Error syncing timezone: $e');
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  Future<void> dismissTimezonePrompt() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('last_known_timezone', newTimezoneOffset);
+    showTimezonePrompt = false;
+    notifyListeners();
   }
 
   void clearData() {

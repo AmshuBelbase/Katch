@@ -939,7 +939,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               final itemId = t['id'].toString();
               if (itemId.startsWith('dummy')) return;
               
-              Provider.of<ApiProvider>(context, listen: false).hideTransactionOptimistically(itemId);
+              final api = Provider.of<ApiProvider>(context, listen: false);
+              api.hideTransactionOptimistically(itemId);
               UndoHelper.showUndoDeleteSnackbar(
                 context: context,
                 itemName: 'Transaction',

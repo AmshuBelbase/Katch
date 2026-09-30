@@ -19,6 +19,7 @@ class RemindersScreen extends StatefulWidget {
 }
 
 class _RemindersScreenState extends State<RemindersScreen> {
+  int _currentMode = 0;
   DateTime? _selectedDate;
 
   void _onDateSelected(DateTime date) {
@@ -68,7 +69,15 @@ class _RemindersScreenState extends State<RemindersScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
+          int activeRepeatingCount = api.reminders.where((r) => r['recurrence_rule'] != null && r['is_completed'] != true).length;
+          int activeOneOffCount = api.reminders.where((r) => r['recurrence_rule'] == null && r['is_completed'] != true).length;
+          bool showTabs = activeRepeatingCount > 5 && activeOneOffCount > 0;
+          
           List<dynamic> displayReminders = List.from(api.reminders);
+          if (showTabs) {
+            displayReminders = displayReminders.where((r) => _currentMode == 0 ? r['recurrence_rule'] == null : r['recurrence_rule'] != null).toList();
+          }
+
           if (displayReminders.isEmpty && api.isTutorialActive) {
             displayReminders.add({
               'id': 'dummy',
@@ -159,20 +168,42 @@ class _RemindersScreenState extends State<RemindersScreen> {
              if (l.isNotEmpty) { firstNonEmptyList = l; break; }
           }
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              await api.fetchReminders();
-            },
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-              SliverToBoxAdapter(
+          return Column(
+            children: [
+              if (showTabs)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: SegmentedButton<int>(
+                      segments: const [
+                        ButtonSegment(value: 0, label: Text('One-Off')),
+                        ButtonSegment(value: 1, label: Text('Repeating')),
+                      ],
+                      selected: {_currentMode},
+                      onSelectionChanged: (Set<int> newSelection) {
+                        setState(() {
+                          _currentMode = newSelection.first;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    await api.fetchReminders();
+                  },
+                  child: CustomScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    slivers: [
+                    SliverToBoxAdapter(
                 child: CustomShowcase(
                   showcaseKey: TutorialKeys.reminderCardKey,
                   title: 'Task Calendar',
                   description: 'Click on any date to filter reminders for that day. Click again to clear.',
                   child: TaskCalendar(
-                    reminders: api.reminders,
+                    reminders: displayReminders, // Filtered reminders passed to calendar!
                     selectedDate: _selectedDate,
                     onDateSelected: _onDateSelected,
                   ),
@@ -198,20 +229,23 @@ class _RemindersScreenState extends State<RemindersScreen> {
               if (upcoming.isNotEmpty)
                 _buildList(upcoming, api, isFirstList: upcoming == firstNonEmptyList),
                 
-              if (completedList.isNotEmpty)
-                _buildSectionHeader('Completed', Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-              if (completedList.isNotEmpty)
-                _buildList(completedList, api, isFirstList: completedList == firstNonEmptyList),
-
               if (noDeadlines.isNotEmpty)
                 _buildSectionHeader('No deadlines', Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
               if (noDeadlines.isNotEmpty)
                 _buildList(noDeadlines, api, isFirstList: noDeadlines == firstNonEmptyList),
                 
+              if (completedList.isNotEmpty)
+                _buildSectionHeader('Completed', Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+              if (completedList.isNotEmpty)
+                _buildList(completedList, api, isFirstList: completedList == firstNonEmptyList),
+
               const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
             ],
           ),
-        );
+        ),
+        ),
+            ],
+          );
       },
     ),
     );
@@ -326,6 +360,16 @@ class _RemindersScreenState extends State<RemindersScreen> {
                         padding: EdgeInsets.only(left: 6),
                         child: Icon(Icons.repeat, size: 14, color: Colors.blueGrey),
                       ),
+                    if (item['next_due_datetime'] != null) ...[
+                      const SizedBox(width: 4),
+                      Text(
+                        DateFormat('MMM d, h:mm a').format(DateTime.parse(item['next_due_datetime']).toLocal()),
+                        style: const TextStyle(
+                          color: Colors.blueGrey,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 trailing: index == 0 && isFirstList ? CustomShowcase(

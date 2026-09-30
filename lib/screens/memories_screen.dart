@@ -178,6 +178,53 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
         slivers: [
           Consumer<ApiProvider>(
             builder: (context, api, child) {
+              if (api.showTimezonePrompt) {
+                return SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.public, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text('Timezone Change Detected', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.onPrimaryContainer)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text('Update your recurring reminders to trigger at the same local time in your new timezone?', style: TextStyle(color: Theme.of(context).colorScheme.onPrimaryContainer)),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            TextButton(
+                              onPressed: () => api.dismissTimezonePrompt(),
+                              child: const Text('Keep Home Timezone'),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton(
+                              onPressed: () => api.syncRecurringRemindersTimezone(),
+                              child: const Text('Update All'),
+                            ),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return const SliverToBoxAdapter(child: SizedBox.shrink());
+            },
+          ),
+          Consumer<ApiProvider>(
+            builder: (context, api, child) {
               List<dynamic> chartMemories = List.from(api.memories);
               
               if (_searchController.text.isNotEmpty) {
