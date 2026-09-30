@@ -275,8 +275,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 }).toList();
               }
 
-              bool hasSeenTutorial = Supabase.instance.client.auth.currentUser?.userMetadata?['has_seen_initial_onboarding'] == true;
-              if (displayMemories.isEmpty && !hasSeenTutorial) {
+              if (displayMemories.isEmpty && api.isTutorialActive) {
                 displayMemories = [{
                   'id': 'dummy',
                   'created_at': DateTime.now().toIso8601String(),

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
+import '../providers/api_provider.dart';
 
 class CustomShowcase extends StatelessWidget {
   final GlobalKey showcaseKey;
@@ -62,6 +64,7 @@ class CustomShowcase extends StatelessWidget {
               children: [
                 TextButton(
                   onPressed: () {
+                    Provider.of<ApiProvider>(context, listen: false).setTutorialActive(false);
                     ShowCaseWidget.of(context).dismiss();
                   },
                   child: const Text('Skip for now', style: TextStyle(color: Colors.grey)),
@@ -90,6 +93,7 @@ class CustomShowcase extends StatelessWidget {
               child: TextButton(
                 onPressed: () {
                   _skipForever();
+                  Provider.of<ApiProvider>(context, listen: false).setTutorialActive(false);
                   ShowCaseWidget.of(context).dismiss();
                 },
                 child: const Text('Never show again', style: TextStyle(color: Colors.redAccent, fontSize: 12)),

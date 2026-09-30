@@ -56,10 +56,22 @@ class ApiProvider extends ChangeNotifier {
     initFuture = _initializeConnectivity();
   }
 
+  bool isTutorialActive = false;
+
+  void setTutorialActive(bool active) {
+    isTutorialActive = active;
+    notifyListeners();
+  }
+
   Future<void> _initializeConnectivity() async {
     _setLoading(true);
     error = null;
     connectionStatus = "Checking server connectivity...";
+    
+    final user = Supabase.instance.client.auth.currentUser;
+    final metadata = user?.userMetadata ?? {};
+    isTutorialActive = !(metadata['has_seen_initial_onboarding'] == true);
+    
     notifyListeners();
     
     Future<bool> checkHealth(String url, {int timeoutMs = 5000}) async {

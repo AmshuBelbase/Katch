@@ -90,6 +90,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
     return ShowCaseWidget(
       onFinish: () async {
+        if (mounted) Provider.of<ApiProvider>(context, listen: false).setTutorialActive(false);
         final packageInfo = await PackageInfo.fromPlatform();
         await Supabase.instance.client.auth.updateUser(
           UserAttributes(data: {

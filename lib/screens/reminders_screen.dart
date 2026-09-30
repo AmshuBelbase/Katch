@@ -68,10 +68,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          bool hasSeenTutorial = Supabase.instance.client.auth.currentUser?.userMetadata?['has_seen_initial_onboarding'] == true;
-
           List<dynamic> displayReminders = List.from(api.reminders);
-          if (displayReminders.isEmpty && !hasSeenTutorial) {
+          if (displayReminders.isEmpty && api.isTutorialActive) {
             displayReminders.add({
               'id': 'dummy',
               'task_name': 'Sample Task',

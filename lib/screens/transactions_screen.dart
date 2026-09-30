@@ -253,8 +253,6 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   }
 
   Widget _buildPersonalTab(ApiProvider api) {
-    bool hasSeenTutorial = Supabase.instance.client.auth.currentUser?.userMetadata?['has_seen_initial_onboarding'] == true;
-    
     final now = DateTime.now();
     final personalTx = api.transactions.where((t) {
       if (t['transaction_type'] != 'expense' && t['transaction_type'] != 'income') return false;
@@ -272,7 +270,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       return true;
     }).toList();
     
-    if (personalTx.isEmpty && !hasSeenTutorial) {
+    if (personalTx.isEmpty && api.isTutorialActive) {
       personalTx.add({
         'id': 'dummy_personal',
         'amount': 150.0,
@@ -673,11 +671,9 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   // ================= SPLITWISE MODE =================
 
   Widget _buildSplitwiseTab(ApiProvider api) {
-    bool hasSeenTutorial = Supabase.instance.client.auth.currentUser?.userMetadata?['has_seen_initial_onboarding'] == true;
-    
     List<dynamic> splits = List.from(api.transactions.where((t) => t['transaction_type'] == 'split' || t['transaction_type'] == null));
     
-    if (splits.isEmpty && !hasSeenTutorial) {
+    if (splits.isEmpty && api.isTutorialActive) {
       splits.add({
         'id': 'dummy_split',
         'amount': 50.0,
