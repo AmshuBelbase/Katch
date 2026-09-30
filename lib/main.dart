@@ -1,8 +1,13 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:home_widget/home_widget.dart';
+import 'package:workmanager/workmanager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
+import 'utils/widget_sync_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:alarm/alarm.dart' hide NotificationSettings;
 import 'screens/auth_screen.dart';
@@ -24,6 +29,24 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print("Handling a background message: ${message.messageId}");
 }
 
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, inputData) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final remindersJson = prefs.getString('saved_reminders') ?? '[]';
+      final List<dynamic> reminders = json.decode(remindersJson);
+      
+      final txJson = prefs.getString('saved_transactions') ?? '[]';
+      final List<dynamic> transactions = json.decode(txJson);
+      
+      await WidgetSyncHelper.syncWidgets(reminders, transactions);
+    } catch (e) {
+      print("Background widget sync error: $e");
+    }
+    return Future.value(true);
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +58,16 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+  Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: false,
+  );
+  Workmanager().registerPeriodicTask(
+    "widget-sync-task",
+    "widgetSync",
+    frequency: const Duration(minutes: 15),
+  );
 
   await Supabase.initialize(
     url: 'https://kbupfvxvouitjxvnahib.supabase.co',
@@ -318,6 +351,26 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
     _setupFCM();
     _setupAlarmListener();
     _checkOnboarding();
+    
+    HomeWidget.setAppGroupId('group.com.katch.widget');
+    HomeWidget.widgetClicked.listen((Uri? uri) => _loadFromWidget(uri));
+    HomeWidget.initiallyLaunchedFromHomeWidget().then(_loadFromWidget);
+  }
+
+  void _loadFromWidget(Uri? uri) {
+    if (uri != null) {
+      if (uri.host == 'action') {
+        if (uri.path == '/record') {
+          setState(() => _currentIndex = 0);
+        } else if (uri.path == '/reminders') {
+          setState(() => _currentIndex = 3);
+        } else if (uri.path == '/finance') {
+          setState(() => _currentIndex = 4);
+        } else if (uri.path == '/splitwise') {
+          setState(() => _currentIndex = 4);
+        }
+      }
+    }
   }
 
   bool _isVersionGreater(String v1, String v2) {

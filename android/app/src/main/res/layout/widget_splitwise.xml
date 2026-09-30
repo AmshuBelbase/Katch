@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="top"
+    android:background="#2C2C2C"
+    android:padding="16dp">
+    
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Splitwise Balances"
+        android:textColor="#AAAAAA"
+        android:textSize="14sp" />
+    
+    <TextView
+        android:id="@+id/tv_splitwise"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="No pending splitwise balances"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:maxLines="6"
+        android:ellipsize="end" />
+</LinearLayout>

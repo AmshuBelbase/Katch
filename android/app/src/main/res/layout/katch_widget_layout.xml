@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#2C2C2C"
+    android:padding="16dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Katch"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+        <Button
+            android:id="@+id/btn_record"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+ Note"
+            android:backgroundTint="#673AB7"
+            android:textColor="#FFFFFF" />
+    </LinearLayout>
+
+    <!-- Reminder Section -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Next Reminder:"
+        android:textColor="#AAAAAA"
+        android:textSize="12sp" />
+    
+    <TextView
+        android:id="@+id/tv_reminder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No upcoming reminders"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp"
+        android:maxLines="2"
+        android:ellipsize="end" />
+
+    <!-- Transaction Section -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="Latest Transaction:"
+        android:textColor="#AAAAAA"
+        android:textSize="12sp" />
+    
+    <TextView
+        android:id="@+id/tv_transaction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No recent transactions"
+        android:textColor="#FFFFFF"
+        android:textSize="16sp" />
+
+</LinearLayout>

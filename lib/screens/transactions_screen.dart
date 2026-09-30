@@ -685,29 +685,36 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       });
     }
 
-    double totalInflow = 0; 
-    double totalOutflow = 0; 
-
     Map<String, double> personBalances = {};
     Map<String, List<dynamic>> personHistory = {};
 
     for (var t in splits) {
-      double amt = double.parse(t['amount'].toString());
+      double amt = double.tryParse(t['amount'].toString()) ?? 0.0;
       String creditor = t['creditor'].toString();
       String debtor = t['debtor'].toString();
 
       if (creditor.toLowerCase() == 'self') {
-        totalInflow += amt;
         personBalances[debtor] = (personBalances[debtor] ?? 0) + amt;
-        
         personHistory.putIfAbsent(debtor, () => []).add(t);
       } else if (debtor.toLowerCase() == 'self') {
-        totalOutflow += amt;
         personBalances[creditor] = (personBalances[creditor] ?? 0) - amt;
-        
         personHistory.putIfAbsent(creditor, () => []).add(t);
       }
     }
+
+    // Filter out settled balances
+    personBalances.removeWhere((person, balance) => balance.abs() < 0.01);
+
+    double totalInflow = 0; 
+    double totalOutflow = 0; 
+    
+    personBalances.forEach((person, balance) {
+      if (balance > 0) {
+        totalInflow += balance;
+      } else if (balance < 0) {
+        totalOutflow += balance.abs();
+      }
+    });
 
     double netBalance = totalInflow - totalOutflow;
 

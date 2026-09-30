@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:alarm/alarm.dart';
+import 'package:home_widget/home_widget.dart';
+import '../utils/widget_sync_helper.dart';
+
 class ApiProvider extends ChangeNotifier {
   Map<String, String> get _headers {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
@@ -605,7 +608,10 @@ class ApiProvider extends ChangeNotifier {
       final response = await http.get(Uri.parse('$baseUrl/reminders'), headers: _headers);
       if (response.statusCode == 200) {
         reminders = json.decode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('saved_reminders', response.body);
         _syncAlarms();
+        _syncWidgetData();
       }
     } catch (e) {
       error = e.toString();
@@ -681,10 +687,17 @@ class ApiProvider extends ChangeNotifier {
       final response = await http.get(Uri.parse('$baseUrl/transactions'), headers: _headers);
       if (response.statusCode == 200) {
         transactions = json.decode(response.body);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('saved_transactions', response.body);
+        _syncWidgetData();
       }
     } catch (e) {
       error = e.toString();
     }
+  }
+
+  Future<void> _syncWidgetData() async {
+    await WidgetSyncHelper.syncWidgets(reminders, transactions);
   }
 
   // --- CHAT ---
