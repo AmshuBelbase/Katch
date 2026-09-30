@@ -9,13 +9,16 @@ class WidgetSyncHelper {
       String reminderWidgetText = "No upcoming reminders";
       final pending = reminders.where((r) {
         if (r['is_completed'] == true) return false;
-        final dateStr = r['next_due_datetime'] ?? r['due_datetime'];
+        final dateStr = r['due_datetime'];
         if (dateStr == null) return false;
         try {
           DateTime dueUtc = DateTime.parse(dateStr);
           if (!dueUtc.isUtc && !dateStr.endsWith('Z')) {
             dueUtc = DateTime.parse('${dateStr}Z');
           }
+          // Only show items that are due in the future (or today) so we don't show old ignored overdue stuff forever
+          // Actually, if it's pending, they probably want to see it regardless of whether it's overdue or upcoming.
+          // BUT the user said "upcoming reminder is skipping today/tomorrow". So we should just sort by due_datetime.
           return true;
         } catch (e) {
           return false;
@@ -24,8 +27,8 @@ class WidgetSyncHelper {
       
       if (pending.isNotEmpty) {
         pending.sort((a, b) {
-          final dA = a['next_due_datetime'] ?? a['due_datetime'] ?? '';
-          final dB = b['next_due_datetime'] ?? b['due_datetime'] ?? '';
+          final dA = a['due_datetime'] ?? '';
+          final dB = b['due_datetime'] ?? '';
           return dA.compareTo(dB);
         });
         
@@ -33,7 +36,7 @@ class WidgetSyncHelper {
         List<String> reminderLines = [];
         for (var r in next5) {
             String title = r['task_name'] ?? r['title'] ?? 'Reminder';
-            String dateStr = r['next_due_datetime'] ?? r['due_datetime'] ?? '';
+            String dateStr = r['due_datetime'] ?? '';
             String formattedDate = "";
             if (dateStr.isNotEmpty) {
                try {

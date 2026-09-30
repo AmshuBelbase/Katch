@@ -4,5 +4,6 @@
     android:minHeight="150dp"
     android:updatePeriodMillis="86400000"
     android:initialLayout="@layout/katch_widget_layout"
+    android:previewLayout="@layout/katch_widget_layout"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen" />
