@@ -7,3 +7,11 @@ What's New in v1.1.5:
 • Rock-Solid Data Management: Hardened and more reliable deletion logic across the app, ensuring your data is handled safely.
 
 • Responsive UI Improvements: Core app screens have been updated to be fully responsive and adapt gracefully to different screen sizes.
+
+What's New in v1.1.6:
+
+• Interactive Home Screen Widgets: Add notes instantly, view upcoming reminders, check personal finances, and review Splitwise balances directly from your Android home screen with beautiful, dynamically-sized widgets.
+
+• Perfected Splitwise Balances: Your personal net balances in the Splitwise tab now accurately net out borrowed and repaid amounts to give you a clean "Owed to You" and "You Owe" summary. Settled debts naturally disappear from the list.
+
+• Smart Background Sync: Your home screen widgets stay seamlessly up to date in the background and intelligently launch straight to the correct app tab when tapped.
