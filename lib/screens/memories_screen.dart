@@ -22,8 +22,9 @@ class MemoriesScreen extends StatefulWidget {
 
 class _MemoriesScreenState extends State<MemoriesScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _filter = 'Recent';
-  final List<String> _filters = ['Recent', 'All', 'Audio', 'Text', 'Starred'];
+  String _timeFilter = 'Recent';
+  final Set<String> _typeFilters = {};
+  final List<String> _availableTypeFilters = ['Audio', 'Text', 'Starred', 'Has Transaction', 'Has Reminder'];
   DateTime? _selectedChartDate;
   
   Set<String> _selectedMemoryIds = {};
@@ -101,7 +102,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               ]
             : [],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(110),
+          preferredSize: const Size.fromHeight(160),
           child: Column(
             children: [
               Padding(
@@ -119,51 +120,102 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   ),
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Consumer<ApiProvider>(
+                    builder: (context, api, child) {
+                      int recentCount = api.memories.where((m) {
+                        if (_searchController.text.isNotEmpty && !(m['raw_text'] ?? '').toLowerCase().contains(_searchController.text.toLowerCase())) return false;
+                        if (m['created_at'] == null) return false;
+                        DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+                        final now = DateTime.now();
+                        final difference = DateTime(now.year, now.month, now.day).difference(DateTime(createdAt.year, createdAt.month, createdAt.day)).inDays;
+                        return difference >= 0 && difference < 7;
+                      }).length;
+
+                      int allCount = api.memories.where((m) {
+                        if (_searchController.text.isNotEmpty && !(m['raw_text'] ?? '').toLowerCase().contains(_searchController.text.toLowerCase())) return false;
+                        return true;
+                      }).length;
+
+                      return SegmentedButton<String>(
+                        segments: [
+                          ButtonSegment(value: 'Recent', label: Text('Last 7 Days ($recentCount)')),
+                          ButtonSegment(value: 'All Time', label: Text('All Time ($allCount)')),
+                        ],
+                        selected: {_timeFilter},
+                        onSelectionChanged: (Set<String> newSelection) {
+                          setState(() {
+                            _timeFilter = newSelection.first;
+                          });
+                        },
+                      );
+                    }
+                  ),
+                ),
+              ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                 child: Row(
-                  children: _filters.map((f) {
+                  children: _availableTypeFilters.map((f) {
+                    final isSelected = _typeFilters.contains(f);
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: FilterChip(
                         label: Builder(
                           builder: (ctx) {
                             String labelText = f;
-                            if (_filter == f) {
+                            if (isSelected) {
                               final api = Provider.of<ApiProvider>(ctx);
                               int count = api.memories.where((m) {
                                 if (_searchController.text.isNotEmpty) {
                                   if (!(m['raw_text'] ?? '').toLowerCase().contains(_searchController.text.toLowerCase())) return false;
                                 }
-                                if (f == 'Recent') {
+                                if (_timeFilter == 'Recent') {
                                   if (m['created_at'] == null) return false;
                                   DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
                                   final now = DateTime.now();
                                   final today = DateTime(now.year, now.month, now.day);
                                   final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
                                   final difference = today.difference(createdDate).inDays;
-                                  return difference >= 0 && difference < 7;
+                                  if (difference < 0 || difference >= 7) return false;
                                 }
-                                if (f == 'Audio') return (m['source'] ?? '').toLowerCase() == 'audio';
-                                if (f == 'Text') return (m['source'] ?? '').toLowerCase() == 'text';
-                                if (f == 'Starred') return m['is_starred'] == true;
-                                return true;
+                                
+                                bool matches = true;
+                                if (_typeFilters.contains('Audio') && (m['source'] ?? '').toLowerCase() != 'audio') matches = false;
+                                if (_typeFilters.contains('Text') && (m['source'] ?? '').toLowerCase() != 'text') matches = false;
+                                if (_typeFilters.contains('Starred') && m['is_starred'] != true) matches = false;
+                                if (_typeFilters.contains('Has Transaction')) {
+                                  if (!api.transactions.any((t) => t['memory_id'] == m['id'].toString())) matches = false;
+                                }
+                                if (_typeFilters.contains('Has Reminder')) {
+                                  if (!api.reminders.any((r) => r['memory_id'] == m['id'].toString())) matches = false;
+                                }
+                                return matches;
                               }).length;
                               labelText = '$f ($count)';
                             }
                             return Text(labelText);
                           }
                         ),
-                        selected: _filter == f,
+                        selected: isSelected,
                         onSelected: (bool selected) {
-                          setState(() => _filter = f);
+                          setState(() {
+                            if (selected) {
+                              _typeFilters.add(f);
+                            } else {
+                              _typeFilters.remove(f);
+                            }
+                          });
                         },
                         selectedColor: Theme.of(context).colorScheme.primary,
                         checkmarkColor: Theme.of(context).colorScheme.onPrimary,
                         labelStyle: TextStyle(
-                          color: _filter == f ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onBackground,
-                          fontWeight: _filter == f ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onBackground,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                         ),
                       ),
                     );
@@ -234,21 +286,31 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 }).toList();
               }
 
-              if (_filter != 'All') {
+              if (_timeFilter == 'Recent') {
                 chartMemories = chartMemories.where((m) {
-                  if (_filter == 'Recent') {
-                    if (m['created_at'] == null) return false;
-                    DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
-                    final now = DateTime.now();
-                    final today = DateTime(now.year, now.month, now.day);
-                    final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
-                    final difference = today.difference(createdDate).inDays;
-                    return difference >= 0 && difference < 7;
+                  if (m['created_at'] == null) return false;
+                  DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+                  final now = DateTime.now();
+                  final today = DateTime(now.year, now.month, now.day);
+                  final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
+                  final difference = today.difference(createdDate).inDays;
+                  return difference >= 0 && difference < 7;
+                }).toList();
+              }
+
+              if (_typeFilters.isNotEmpty) {
+                chartMemories = chartMemories.where((m) {
+                  bool matches = true;
+                  if (_typeFilters.contains('Audio') && (m['source'] ?? '').toLowerCase() != 'audio') matches = false;
+                  if (_typeFilters.contains('Text') && (m['source'] ?? '').toLowerCase() != 'text') matches = false;
+                  if (_typeFilters.contains('Starred') && m['is_starred'] != true) matches = false;
+                  if (_typeFilters.contains('Has Transaction')) {
+                    if (!api.transactions.any((t) => t['memory_id'] == m['id'].toString())) matches = false;
                   }
-                  if (_filter == 'Audio') return (m['source'] ?? '').toLowerCase() == 'audio';
-                  if (_filter == 'Text') return (m['source'] ?? '').toLowerCase() == 'text';
-                  if (_filter == 'Starred') return m['is_starred'] == true;
-                  return true;
+                  if (_typeFilters.contains('Has Reminder')) {
+                    if (!api.reminders.any((r) => r['memory_id'] == m['id'].toString())) matches = false;
+                  }
+                  return matches;
                 }).toList();
               }
 
@@ -303,22 +365,33 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 }).toList();
               }
 
-              // Apply Chip Filter
-              if (_filter != 'All') {
+              // Apply Time Filter
+              if (_timeFilter == 'Recent') {
                 displayMemories = displayMemories.where((m) {
-                  if (_filter == 'Recent') {
-                    if (m['created_at'] == null) return false;
-                    DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
-                    final now = DateTime.now();
-                    final today = DateTime(now.year, now.month, now.day);
-                    final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
-                    final difference = today.difference(createdDate).inDays;
-                    return difference >= 0 && difference < 7;
+                  if (m['created_at'] == null) return false;
+                  DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+                  final now = DateTime.now();
+                  final today = DateTime(now.year, now.month, now.day);
+                  final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
+                  final difference = today.difference(createdDate).inDays;
+                  return difference >= 0 && difference < 7;
+                }).toList();
+              }
+
+              // Apply Type Filters
+              if (_typeFilters.isNotEmpty) {
+                displayMemories = displayMemories.where((m) {
+                  bool matches = true;
+                  if (_typeFilters.contains('Audio') && (m['source'] ?? '').toLowerCase() != 'audio') matches = false;
+                  if (_typeFilters.contains('Text') && (m['source'] ?? '').toLowerCase() != 'text') matches = false;
+                  if (_typeFilters.contains('Starred') && m['is_starred'] != true) matches = false;
+                  if (_typeFilters.contains('Has Transaction')) {
+                    if (!api.transactions.any((t) => t['memory_id'] == m['id'].toString())) matches = false;
                   }
-                  if (_filter == 'Audio') return (m['source'] ?? '').toLowerCase() == 'audio';
-                  if (_filter == 'Text') return (m['source'] ?? '').toLowerCase() == 'text';
-                  if (_filter == 'Starred') return m['is_starred'] == true;
-                  return true;
+                  if (_typeFilters.contains('Has Reminder')) {
+                    if (!api.reminders.any((r) => r['memory_id'] == m['id'].toString())) matches = false;
+                  }
+                  return matches;
                 }).toList();
               }
 
