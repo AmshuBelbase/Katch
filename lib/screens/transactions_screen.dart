@@ -376,8 +376,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                     UndoHelper.showUndoDeleteSnackbar(
                       context: context,
                       itemName: 'Transaction',
-                      onUndo: () => Provider.of<ApiProvider>(context, listen: false).fetchTransactions(),
-                      onExecute: () => Provider.of<ApiProvider>(context, listen: false).deleteTransaction(itemId),
+                      onUndo: () => api.fetchTransactions(),
+                      onExecute: () => api.deleteTransaction(itemId),
                     );
                   },
                   child: InkWell(
@@ -943,8 +943,8 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
               UndoHelper.showUndoDeleteSnackbar(
                 context: context,
                 itemName: 'Transaction',
-                onUndo: () => Provider.of<ApiProvider>(context, listen: false).fetchTransactions(),
-                onExecute: () => Provider.of<ApiProvider>(context, listen: false).deleteTransaction(itemId),
+                onUndo: () => api.fetchTransactions(),
+                onExecute: () => api.deleteTransaction(itemId),
               );
             },
             child: histIndex == 0 && isFirstPerson ? CustomShowcase(

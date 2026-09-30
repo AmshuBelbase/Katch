@@ -1,7 +1,28 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 
-class UndoHelper {
+class UndoHelper with WidgetsBindingObserver {
+  static final UndoHelper _instance = UndoHelper._internal();
+  UndoHelper._internal() {
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  final List<VoidCallback> _pendingExecutions = [];
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || 
+        state == AppLifecycleState.inactive || 
+        state == AppLifecycleState.detached) {
+      // Execute all pending deletions immediately when app goes to background
+      final pending = List<VoidCallback>.from(_pendingExecutions);
+      _pendingExecutions.clear();
+      for (var exec in pending) {
+        exec();
+      }
+    }
+  }
+
   static void showUndoDeleteSnackbar({
     required BuildContext context,
     required String itemName,
@@ -9,7 +30,18 @@ class UndoHelper {
     required VoidCallback onExecute,
   }) {
     bool undone = false;
+    bool executed = false;
     Timer? timer;
+    
+    void executeNow() {
+      if (!undone && !executed) {
+        executed = true;
+        _instance._pendingExecutions.remove(executeNow);
+        onExecute();
+      }
+    }
+
+    _instance._pendingExecutions.add(executeNow);
     
     final snackBar = SnackBar(
       content: Row(
@@ -46,6 +78,7 @@ class UndoHelper {
         label: 'UNDO',
         onPressed: () {
           undone = true;
+          _instance._pendingExecutions.remove(executeNow);
           timer?.cancel();
           onUndo();
         },
@@ -60,7 +93,7 @@ class UndoHelper {
     controller.closed.then((reason) {
       timer?.cancel();
       if (!undone && reason != SnackBarClosedReason.action) {
-        onExecute();
+        executeNow();
       }
     });
 
