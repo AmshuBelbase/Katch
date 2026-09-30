@@ -1,12 +1,9 @@
-What's New in v1.1.4:
+What's New in v1.1.5:
 
-• Seamless Multi-Device Sync: Reminders, notifications, and alarms now automatically sync across all your logged-in devices in real-time.
+• Recurring Reminders Overhaul: Flawless timezone-aware scheduling, strict mathematical next-occurrence calculations to prevent skipped days, and a new split view separating "One-Off" and "Repeating" tasks.
 
-• Secure Sign Out: Enhanced privacy ensures all personal data is instantly wiped from the device upon logging out.
+• Advanced Memories Filtering: A completely revamped memories screen featuring cascading multi-select filters (Audio, Text, Starred, Transactions, Reminders) and dynamic time ranges (Recent vs All Time) with live counts.
 
-• Accurate AI Chat Limits: Your daily AI chat limits now reliably sync to the cloud across devices.
+• Rock-Solid Data Management: Hardened and more reliable deletion logic across the app, ensuring your data is handled safely.
 
-• Tutorial Polish: Smoother onboarding experience with bug fixes to the interactive tutorials.
-
-• Fixed issue where tutorials were getting closed by clicking on other parts of screen.
-
+• Responsive UI Improvements: Core app screens have been updated to be fully responsive and adapt gracefully to different screen sizes.
