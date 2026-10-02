@@ -554,6 +554,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       double amount = entry.value;
       Color c = colors[i % colors.length];
       double percent = (amount / totalExpense) * 100;
+      final currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
       
       sections.add(PieChartSectionData(
         value: amount,
@@ -569,7 +570,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             Container(width: 12, height: 12, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2))),
             const SizedBox(width: 8),
             Expanded(child: Text(name, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis)),
-            Text('${percent.toStringAsFixed(1)}%', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            Text('${currencyFormatter.format(amount)} (${percent.toStringAsFixed(1)}%)', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           ],
         ),
       ));
@@ -643,6 +644,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       }
       
       double percent = (amount / totalExpense) * 100;
+      final currencyFormatter = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
       legendItems.add(Padding(
         padding: const EdgeInsets.only(right: 16, bottom: 8),
         child: Row(
@@ -650,7 +652,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           children: [
             Container(width: 12, height: 12, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(2))),
             const SizedBox(width: 6),
-            Text('$name (${percent.toStringAsFixed(1)}%)', style: const TextStyle(fontSize: 12)),
+            Text('$name - ${currencyFormatter.format(amount)} (${percent.toStringAsFixed(1)}%)', style: const TextStyle(fontSize: 12)),
           ],
         ),
       ));
