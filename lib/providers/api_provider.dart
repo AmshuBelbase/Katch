@@ -64,6 +64,7 @@ class ApiProvider extends ChangeNotifier {
   bool isTutorialActive = false;
   bool showTimezonePrompt = false;
   String newTimezoneOffset = "";
+  bool isAdmin = false;
 
   void setTutorialActive(bool active) {
     isTutorialActive = active;
@@ -135,9 +136,29 @@ class ApiProvider extends ChangeNotifier {
         _fetchTransactionsInternal(),
         _fetchExpenseCategoriesInternal(),
         fetchChatStatus(),
+        _fetchUserRoleInternal(),
       ]);
     }
     _setLoading(false);
+  }
+
+  Future<void> _fetchUserRoleInternal() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return;
+      
+      final response = await Supabase.instance.client
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .maybeSingle();
+          
+      if (response != null && response['role'] == 'admin') {
+        isAdmin = true;
+      }
+    } catch (e) {
+      print('Error fetching user role: \$e');
+    }
   }
 
   Future<void> syncRecurringRemindersTimezone() async {

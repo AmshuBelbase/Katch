@@ -10,6 +10,7 @@ import 'firebase_options.dart';
 import 'utils/widget_sync_helper.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:alarm/alarm.dart' hide NotificationSettings;
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'screens/auth_screen.dart';
 import 'screens/splash_screen.dart';
 import 'providers/api_provider.dart';
@@ -470,6 +471,51 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
     FirebaseMessaging messaging = FirebaseMessaging.instance;
     NotificationSettings settings = await messaging.requestPermission();
     
+    // Create Notification Channels for Android
+    final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+        FlutterLocalNotificationsPlugin();
+
+    const AndroidNotificationChannel channelFeatures = AndroidNotificationChannel(
+      'channel_features',
+      'Features',
+      description: 'Notifications about new app capabilities and how to use them.',
+      importance: Importance.max,
+    );
+
+    const AndroidNotificationChannel channelUpdates = AndroidNotificationChannel(
+      'channel_updates',
+      'Updates',
+      description: 'General app news, maintenance, and version updates.',
+      importance: Importance.high,
+    );
+
+    const AndroidNotificationChannel channelReminders = AndroidNotificationChannel(
+      'channel_reminders',
+      'Reminders',
+      description: 'Server-side functional alerts and reminders.',
+      importance: Importance.high,
+    );
+
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channelFeatures);
+    
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channelUpdates);
+
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channelReminders);
+
+    // Subscribe to categorized FCM Topics
+    await messaging.subscribeToTopic('topic_features');
+    await messaging.subscribeToTopic('topic_updates');
+    await messaging.subscribeToTopic('topic_reminders');
+
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       print('User granted permission for notifications');
       // Get the token

@@ -7,6 +7,7 @@ import '../theme.dart';
 import 'package:alarm/alarm.dart';
 import '../providers/api_provider.dart';
 import '../screens/settings_screen.dart';
+import '../screens/admin_notification_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -78,6 +79,24 @@ class AppDrawer extends StatelessWidget {
                 context,
                 MaterialPageRoute(builder: (context) => const SettingsScreen()),
               );
+            },
+          ),
+          Consumer<ApiProvider>(
+            builder: (context, api, child) {
+              if (api.isAdmin) {
+                return ListTile(
+                  leading: Icon(Icons.admin_panel_settings, color: Theme.of(context).colorScheme.primary),
+                  title: const Text('Admin Tools', style: TextStyle(fontWeight: FontWeight.w500)),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AdminNotificationScreen()),
+                    );
+                  },
+                );
+              }
+              return const SizedBox.shrink();
             },
           ),
           ListTile(
