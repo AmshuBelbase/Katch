@@ -18,6 +18,8 @@ class ApiProvider extends ChangeNotifier {
     };
   }
 
+  String? get currentSessionToken => Supabase.instance.client.auth.currentSession?.accessToken;
+
   void _addAuthToMultipart(http.MultipartRequest request) {
     final token = Supabase.instance.client.auth.currentSession?.accessToken;
     if (token != null) {
@@ -145,7 +147,11 @@ class ApiProvider extends ChangeNotifier {
   Future<void> _fetchUserRoleInternal() async {
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) return;
+      if (userId == null) {
+        isAdmin = false;
+        notifyListeners();
+        return;
+      }
       
       final response = await Supabase.instance.client
           .from('user_roles')
@@ -155,9 +161,14 @@ class ApiProvider extends ChangeNotifier {
           
       if (response != null && response['role'] == 'admin') {
         isAdmin = true;
+      } else {
+        isAdmin = false;
       }
+      notifyListeners();
     } catch (e) {
-      print('Error fetching user role: \$e');
+      print('Error fetching user role: $e');
+      isAdmin = false;
+      notifyListeners();
     }
   }
 
@@ -198,6 +209,7 @@ class ApiProvider extends ChangeNotifier {
     chatHistory.clear();
     expenseCategories.clear();
     remainingChats = 15;
+    isAdmin = false;
     Alarm.stopAll();
     notifyListeners();
   }

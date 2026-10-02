@@ -532,9 +532,26 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
       _navigateFromMessage(message);
     });
 
-    // Foreground messages (silently sync data across devices)
+    // Foreground messages (silently sync data across devices, but show heads-up for push notifications)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print("Received foreground message: ${message.messageId}");
+      
+      if (message.notification != null) {
+        flutterLocalNotificationsPlugin.show(
+          id: message.hashCode,
+          title: message.notification?.title,
+          body: message.notification?.body,
+          notificationDetails: NotificationDetails(
+            android: AndroidNotificationDetails(
+              message.notification?.android?.channelId ?? 'channel_features',
+              'Foreground Notifications',
+              importance: Importance.max,
+              priority: Priority.high,
+            ),
+          ),
+        );
+      }
+
       if (mounted) {
         final api = Provider.of<ApiProvider>(context, listen: false);
         api.fetchReminders();
