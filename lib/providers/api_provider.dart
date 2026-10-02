@@ -138,13 +138,13 @@ class ApiProvider extends ChangeNotifier {
         _fetchTransactionsInternal(),
         _fetchExpenseCategoriesInternal(),
         fetchChatStatus(),
-        _fetchUserRoleInternal(),
+        fetchUserRole(),
       ]);
     }
     _setLoading(false);
   }
 
-  Future<void> _fetchUserRoleInternal() async {
+  Future<void> fetchUserRole() async {
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) {

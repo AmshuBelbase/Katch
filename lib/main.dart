@@ -109,6 +109,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
             api.fetchReminders();
             api.fetchTransactions();
             api.fetchChatStatus();
+            api.fetchUserRole();
           }
         }
         setState(() {});
