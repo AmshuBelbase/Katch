@@ -110,16 +110,32 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
 
   String? selectedFeatureId;
   String selectedCategory = 'Features'; 
-  final List<String> categories = ['Features', 'Updates', 'Reminders'];
+  final List<String> categories = ['Features', 'Updates'];
   
   bool isSending = false;
 
   Future<void> _generateAndReviewNotification() async {
-    if (selectedFeatureId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a feature first.')),
-      );
-      return;
+    Map<String, String> feature;
+    String channelId;
+
+    if (selectedCategory == 'Updates') {
+      feature = {
+        "id": "app_update",
+        "name": "App Update",
+        "screen": "notes", // generic fallback screen
+        "description": "App update available",
+        "usage": "Update app"
+      };
+      channelId = 'channel_updates';
+    } else {
+      if (selectedFeatureId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a feature first.')),
+        );
+        return;
+      }
+      feature = appFeatures.firstWhere((f) => f['id'] == selectedFeatureId);
+      channelId = 'channel_features';
     }
 
     setState(() {
@@ -128,12 +144,6 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
 
     try {
       final apiProvider = Provider.of<ApiProvider>(context, listen: false);
-      final feature = appFeatures.firstWhere((f) => f['id'] == selectedFeatureId);
-      
-      // Determine Android Channel ID based on category
-      String channelId = 'channel_features';
-      if (selectedCategory == 'Updates') channelId = 'channel_updates';
-      if (selectedCategory == 'Reminders') channelId = 'channel_reminders';
 
       final response = await http.post(
         Uri.parse('${apiProvider.baseUrl}/admin/generate-feature-notification'),
@@ -344,30 +354,7 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
             const SizedBox(height: 24),
             
             const Text(
-              '1. Select Feature to Highlight',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            DropdownButtonFormField<String>(
-              value: selectedFeatureId,
-              hint: const Text('Choose a feature...'),
-              decoration: const InputDecoration(border: OutlineInputBorder()),
-              items: appFeatures.map((feature) {
-                return DropdownMenuItem<String>(
-                  value: feature['id'],
-                  child: Text(feature['name']!),
-                );
-              }).toList(),
-              onChanged: (val) {
-                setState(() {
-                  selectedFeatureId = val;
-                });
-              },
-            ),
-            const SizedBox(height: 24),
-            
-            const Text(
-              '2. Select Notification Category',
+              '1. Select Notification Category',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -386,7 +373,39 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                 }
               },
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
+            
+            if (selectedCategory == 'Features') ...[
+              const Text(
+                '2. Select Feature to Highlight',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: selectedFeatureId,
+                hint: const Text('Choose a feature...'),
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+                items: appFeatures.map((feature) {
+                  return DropdownMenuItem<String>(
+                    value: feature['id'],
+                    child: Text(feature['name']!),
+                  );
+                }).toList(),
+                onChanged: (val) {
+                  setState(() {
+                    selectedFeatureId = val;
+                  });
+                },
+              ),
+              const SizedBox(height: 32),
+            ] else ...[
+              const SizedBox(height: 16),
+              const Text(
+                'An AI-generated "App Update Available" notification will be drafted for you to review.',
+                style: TextStyle(color: Colors.deepPurple, fontStyle: FontStyle.italic),
+              ),
+              const SizedBox(height: 32),
+            ],
             
             SizedBox(
               width: double.infinity,
