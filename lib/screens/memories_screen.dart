@@ -22,7 +22,9 @@ class MemoriesScreen extends StatefulWidget {
 
 class _MemoriesScreenState extends State<MemoriesScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String _timeFilter = 'Recent';
+  final ScrollController _timeScrollController = ScrollController(initialScrollOffset: 40.0);
+  String _timeFilter = 'This Month';
+  DateTime? _selectedDate;
   final Set<String> _typeFilters = {};
   final List<String> _availableTypeFilters = ['Audio', 'Text', 'Starred', 'Has Transaction', 'Has Reminder'];
   DateTime? _selectedChartDate;
@@ -44,6 +46,7 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _timeScrollController.dispose();
     super.dispose();
   }
 
@@ -120,41 +123,25 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   ),
                 ),
               ),
-              Padding(
+              SingleChildScrollView(
+                controller: _timeScrollController,
+                scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Consumer<ApiProvider>(
-                    builder: (context, api, child) {
-                      int recentCount = api.memories.where((m) {
-                        if (_searchController.text.isNotEmpty && !(m['raw_text'] ?? '').toLowerCase().contains(_searchController.text.toLowerCase())) return false;
-                        if (m['created_at'] == null) return false;
-                        DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
-                        final now = DateTime.now();
-                        final difference = DateTime(now.year, now.month, now.day).difference(DateTime(createdAt.year, createdAt.month, createdAt.day)).inDays;
-                        return difference >= 0 && difference < 7;
-                      }).length;
-
-                      int allCount = api.memories.where((m) {
-                        if (_searchController.text.isNotEmpty && !(m['raw_text'] ?? '').toLowerCase().contains(_searchController.text.toLowerCase())) return false;
-                        return true;
-                      }).length;
-
-                      return SegmentedButton<String>(
-                        segments: [
-                          ButtonSegment(value: 'Recent', label: Text('Last 7 Days ($recentCount)')),
-                          ButtonSegment(value: 'All Time', label: Text('All Time ($allCount)')),
-                        ],
-                        selected: {_timeFilter},
-                        onSelectionChanged: (Set<String> newSelection) {
-                          setState(() {
-                            _timeFilter = newSelection.first;
-                          });
-                        },
-                      );
-                    }
-                  ),
-                ),
+                child: Consumer<ApiProvider>(
+                  builder: (context, api, child) {
+                    return Row(
+                      children: [
+                        _buildFilterChip('Last 7 Days', api),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('This Month', api),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('Select Month', api, isSelectMonth: true),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('All Time', api),
+                      ]
+                    );
+                  }
+                )
               ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -174,14 +161,18 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                                 if (_searchController.text.isNotEmpty) {
                                   if (!(m['raw_text'] ?? '').toLowerCase().contains(_searchController.text.toLowerCase())) return false;
                                 }
-                                if (_timeFilter == 'Recent') {
-                                  if (m['created_at'] == null) return false;
-                                  DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
-                                  final now = DateTime.now();
+                                final now = DateTime.now();
+                                if (m['created_at'] == null) return false;
+                                DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+                                if (_timeFilter == 'Last 7 Days') {
                                   final today = DateTime(now.year, now.month, now.day);
                                   final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
                                   final difference = today.difference(createdDate).inDays;
                                   if (difference < 0 || difference >= 7) return false;
+                                } else if (_timeFilter == 'This Month') {
+                                  if (createdAt.year != now.year || createdAt.month != now.month) return false;
+                                } else if (_timeFilter == 'Select Month' && _selectedDate != null) {
+                                  if (createdAt.year != _selectedDate!.year || createdAt.month != _selectedDate!.month) return false;
                                 }
                                 
                                 bool matches = true;
@@ -286,17 +277,22 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 }).toList();
               }
 
-              if (_timeFilter == 'Recent') {
-                chartMemories = chartMemories.where((m) {
-                  if (m['created_at'] == null) return false;
-                  DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
-                  final now = DateTime.now();
+              final now = DateTime.now();
+              chartMemories = chartMemories.where((m) {
+                if (m['created_at'] == null) return false;
+                DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+                if (_timeFilter == 'Last 7 Days') {
                   final today = DateTime(now.year, now.month, now.day);
                   final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
                   final difference = today.difference(createdDate).inDays;
                   return difference >= 0 && difference < 7;
-                }).toList();
-              }
+                } else if (_timeFilter == 'This Month') {
+                  return createdAt.year == now.year && createdAt.month == now.month;
+                } else if (_timeFilter == 'Select Month' && _selectedDate != null) {
+                  return createdAt.year == _selectedDate!.year && createdAt.month == _selectedDate!.month;
+                }
+                return true;
+              }).toList();
 
               if (_typeFilters.isNotEmpty) {
                 chartMemories = chartMemories.where((m) {
@@ -366,17 +362,22 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
               }
 
               // Apply Time Filter
-              if (_timeFilter == 'Recent') {
-                displayMemories = displayMemories.where((m) {
-                  if (m['created_at'] == null) return false;
-                  DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
-                  final now = DateTime.now();
+              final now = DateTime.now();
+              displayMemories = displayMemories.where((m) {
+                if (m['created_at'] == null) return false;
+                DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+                if (_timeFilter == 'Last 7 Days') {
                   final today = DateTime(now.year, now.month, now.day);
                   final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
                   final difference = today.difference(createdDate).inDays;
                   return difference >= 0 && difference < 7;
-                }).toList();
-              }
+                } else if (_timeFilter == 'This Month') {
+                  return createdAt.year == now.year && createdAt.month == now.month;
+                } else if (_timeFilter == 'Select Month' && _selectedDate != null) {
+                  return createdAt.year == _selectedDate!.year && createdAt.month == _selectedDate!.month;
+                }
+                return true;
+              }).toList();
 
               // Apply Type Filters
               if (_typeFilters.isNotEmpty) {
@@ -579,6 +580,127 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Future<DateTime?> _showMonthPicker(BuildContext context, DateTime initialDate) async {
+    DateTime selectedDate = initialDate;
+    return showDialog<DateTime>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Select Month'),
+          content: SizedBox(
+            width: 300,
+            height: 300,
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                return Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => setState(() => selectedDate = DateTime(selectedDate.year - 1, selectedDate.month))),
+                        Text('${selectedDate.year}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        IconButton(icon: const Icon(Icons.arrow_forward), onPressed: () => setState(() => selectedDate = DateTime(selectedDate.year + 1, selectedDate.month))),
+                      ],
+                    ),
+                    Expanded(
+                      child: GridView.builder(
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, childAspectRatio: 2),
+                        itemCount: 12,
+                        itemBuilder: (context, index) {
+                          bool isSelected = selectedDate.month == index + 1;
+                          return InkWell(
+                            onTap: () {
+                              setState(() => selectedDate = DateTime(selectedDate.year, index + 1));
+                            },
+                            child: Container(
+                              margin: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.transparent,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                DateFormat('MMM').format(DateTime(2020, index + 1)),
+                                style: TextStyle(color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onBackground),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(onPressed: () => Navigator.pop(context, selectedDate), child: const Text('OK')),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildFilterChip(String label, ApiProvider api, {bool isSelectMonth = false}) {
+    bool isSelected = _timeFilter == (isSelectMonth ? 'Select Month' : label);
+    String displayLabel = label;
+    if (isSelectMonth && isSelected && _selectedDate != null) {
+      displayLabel = DateFormat('MMM yyyy').format(_selectedDate!);
+    }
+
+    int count = 0;
+    if (!isSelectMonth || (isSelectMonth && isSelected && _selectedDate != null)) {
+      count = api.memories.where((m) {
+        if (_searchController.text.isNotEmpty) {
+          if (!(m['raw_text'] ?? '').toLowerCase().contains(_searchController.text.toLowerCase())) return false;
+        }
+        if (m['created_at'] == null) return false;
+        DateTime createdAt = DateTime.parse(m['created_at']).toLocal();
+        final now = DateTime.now();
+
+        if (label == 'Last 7 Days') {
+          final today = DateTime(now.year, now.month, now.day);
+          final createdDate = DateTime(createdAt.year, createdAt.month, createdAt.day);
+          final difference = today.difference(createdDate).inDays;
+          return difference >= 0 && difference < 7;
+        } else if (label == 'This Month') {
+          return createdAt.year == now.year && createdAt.month == now.month;
+        } else if (isSelectMonth && _selectedDate != null) {
+          return createdAt.year == _selectedDate!.year && createdAt.month == _selectedDate!.month;
+        }
+        return true;
+      }).length;
+      displayLabel = '$displayLabel ($count)';
+    }
+
+    return FilterChip(
+      label: Text(displayLabel),
+      selected: isSelected,
+      selectedColor: Theme.of(context).colorScheme.primary,
+      checkmarkColor: Theme.of(context).colorScheme.onPrimary,
+      labelStyle: TextStyle(
+        color: isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onBackground,
+        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+      ),
+      onSelected: (selected) async {
+        if (isSelectMonth) {
+          final picked = await _showMonthPicker(context, _selectedDate ?? DateTime.now());
+          if (picked != null) {
+            setState(() {
+              _timeFilter = 'Select Month';
+              _selectedDate = picked;
+            });
+          }
+        } else {
+          setState(() {
+            _timeFilter = label;
+          });
+        }
+      },
     );
   }
 
