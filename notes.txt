@@ -1,3 +1,21 @@
+What's New in v1.1.7:
+
+• Enhanced Finance Insights: Your personal transaction categories now display the exact monetary amount alongside the percentage breakdown, giving you a clearer view of your spending.
+
+• Intelligent Feature Highlights: We've introduced a dynamic, personalized AI notification system. You'll occasionally receive smart, beautifully generated spotlights on app features you might be missing out on—tailored to your exact time zone.
+
+• Improved Foreground Notifications: Upgraded our push notification system to ensure important alerts (like daily drops and feature highlights) reliably show up as heads-up alerts even while you are actively using your phone.
+
+• Under-the-Hood Security & Admin Upgrades: Implemented a robust role-based access system to handle administrative tasks securely without affecting regular users.
+
+What's New in v1.1.6:
+
+• Interactive Home Screen Widgets: Add notes instantly, view upcoming reminders, check personal finances, and review Splitwise balances directly from your Android home screen with beautiful, dynamically-sized widgets.
+
+• Perfected Splitwise Balances: Your personal net balances in the Splitwise tab now accurately net out borrowed and repaid amounts to give you a clean "Owed to You" and "You Owe" summary. Settled debts naturally disappear from the list.
+
+• Smart Background Sync: Your home screen widgets stay seamlessly up to date in the background and intelligently launch straight to the correct app tab when tapped.
+
 What's New in v1.1.5:
 
 • Recurring Reminders Overhaul: Flawless timezone-aware scheduling, strict mathematical next-occurrence calculations to prevent skipped days, and a new split view separating "One-Off" and "Repeating" tasks.
@@ -7,11 +25,3 @@ What's New in v1.1.5:
 • Rock-Solid Data Management: Hardened and more reliable deletion logic across the app, ensuring your data is handled safely.
 
 • Responsive UI Improvements: Core app screens have been updated to be fully responsive and adapt gracefully to different screen sizes.
-
-What's New in v1.1.6:
-
-• Interactive Home Screen Widgets: Add notes instantly, view upcoming reminders, check personal finances, and review Splitwise balances directly from your Android home screen with beautiful, dynamically-sized widgets.
-
-• Perfected Splitwise Balances: Your personal net balances in the Splitwise tab now accurately net out borrowed and repaid amounts to give you a clean "Owed to You" and "You Owe" summary. Settled debts naturally disappear from the list.
-
-• Smart Background Sync: Your home screen widgets stay seamlessly up to date in the background and intelligently launch straight to the correct app tab when tapped.
