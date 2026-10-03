@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
 import '../providers/api_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AdminNotificationScreen extends StatefulWidget {
   const AdminNotificationScreen({super.key});
@@ -12,101 +13,37 @@ class AdminNotificationScreen extends StatefulWidget {
 }
 
 class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
-  // We only need the feature ID and the corresponding deep link screen
-  final List<Map<String, String>> appFeatures = [
-    {
-      "id": "voice_notes",
-      "name": "Voice Notes & Transcription",
-      "screen": "notes",
-      "description": "Record voice memos which are instantly transcribed into highly accurate text using AI. The voice recording won't be saved in user's phone or server. Only the transcript will be saved.",
-      "usage": "Tap the large microphone icon on the Add/Home screen to start recording your voice note. The AI will transcribe and save it."
-    },
-    {
-      "id": "text_notes",
-      "name": "Text Notes",
-      "screen": "notes",
-      "description": "Type out your thoughts, lists, or memories manually if you don't want to use voice.",
-      "usage": "Go to the Add/Home screen and tap the text/pencil icon next to the microphone to open the text input area."
-    },
-    {
-      "id": "smart_reminders",
-      "name": "Smart Reminders Extraction",
-      "screen": "reminders",
-      "description": "The AI automatically detects when you mention a task or deadline in your note and creates a reminder for you.",
-      "usage": "Just mention a time or date in your note (e.g., 'Remind me to call John tomorrow at 5 PM'). Check the Reminders tab to see it."
-    },
-    {
-      "id": "smart_transactions",
-      "name": "Smart Transactions Extraction",
-      "screen": "finance",
-      "description": "The AI automatically detects expenses or transactions mentioned in your notes and categorizes them.",
-      "usage": "Say or type an expense like 'I spent Rs100 on lunch today'. Check the Finance tab to see your tracked expenses."
-    },
-    {
-      "id": "edit_note",
-      "name": "Editing & Resyncing Notes",
-      "screen": "memories",
-      "description": "Edit the text of any past note. The AI will intelligently resync, deleting old auto-extracted reminders or transactions and creating new ones based on the updated text.",
-      "usage": "Go to the Notes screen, tap the three dots on any note, select 'Edit', and update your text."
-    },
-    {
-      "id": "chat_with_memories",
-      "name": "Chat with Memories",
-      "screen": "chat",
-      "description": "Ask our AI assistant questions about your past notes, expenses, or reminders, and it will search your history to answer.",
-      "usage": "Go to the AI Chat screen and ask questions like 'How much did I spend on food this month?' or 'When is my flight?'."
-    },
-    {
-      "id": "app_widget",
-      "name": "App Widget (Home Screen)",
-      "screen": "notes",
-      "description": "Add the Katch widget directly to your phone's home screen for quick 1-tap access to voice recording.",
-      "usage": "Long press on your phone's home screen, tap 'Widgets', find Katch widget you like, and drag it to your screen."
-    },
-    {
-      "id": "repeating_alarms",
-      "name": "Repeating Alarms",
-      "screen": "reminders",
-      "description": "Set alarms that ring daily, weekly, or on specific days/time for recurring or one-off tasks by just mentioning it on Note you save. (AI reads and extracts the task and reminder)",
-      "usage": "Simply save a voice or text note mentioning your repeating schedule or one-off task (e.g., 'Remind me to take my medicine every day at 8 AM' or 'Remind me to call John tomorrow at 5 PM'). The AI will automatically set up the recurring alarm and notification for you."
-    },
-    {
-      "id": "splitwise_integration",
-      "name": "Splitwise (Borrowing/Lending)",
-      "screen": "finance",
-      "description": "Automatically identifies and tracks borrowing or lending transactions based on your voice or text notes, acting as a built-in expense splitter.",
-      "usage": "Simply mention when you borrow from or lend money to someone in a note (e.g., 'John paid Rs100 for my lunch'). You can view all balances ('You owe' / 'Owed to you') in the Splitwise tab of the Finance screen."
-    },
-    {
-      "id": "daily_drops",
-      "name": "Daily Drops",
-      "screen": "reminders",
-      "description": "Receive a daily push notification summarizing your upcoming tasks and recent transactions.",
-      "usage": "This happens automatically in the background every morning to keep you updated on your day."
-    },
+  List<Map<String, String>> appFeatures = [];
+  bool isLoadingFeatures = true;
 
-    {
-      "id": "expense_categories",
-      "name": "Custom Expense Categories",
-      "screen": "finance",
-      "description": "Create custom categories for your expenses to better organize and track your spending. Creating/Deleting a category will reorganize your transactions to better categorise them!",
-      "usage": "Go to the Finance tab, tap the + Category button, and manage your categories there. You won't be able to delete the default categories. You can only add/delete your custom categories."
-    },
-    {
-      "id": "star_notes",
-      "name": "Star & Favorite Notes",
-      "screen": "memories",
-      "description": "Bookmark your most important notes so you can easily find them later using the star filter.",
-      "usage": "Go to the Notes screen and tap the Star icon on any note. Use the filter chip at the top to view only starred notes."
-    },
-    {
-      "id": "search_notes",
-      "name": "Search Notes",
-      "screen": "memories",
-      "description": "Quickly find specific notes by searching for keywords or phrases.",
-      "usage": "Use the search bar at the top of the Memories tab to find what you're looking for."
+  @override
+  void initState() {
+    super.initState();
+    _fetchFeatures();
+  }
+
+  Future<void> _fetchFeatures() async {
+    try {
+      final response = await Supabase.instance.client.from('app_features').select('*');
+      setState(() {
+        appFeatures = (response as List).map((f) => {
+          'id': f['id'].toString(),
+          'name': f['name'].toString(),
+          'screen': f['screen'].toString(),
+          'description': f['description'].toString(),
+          'usage': f['usage'].toString(),
+        }).toList();
+        isLoadingFeatures = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load features: $e')),
+        );
+        setState(() => isLoadingFeatures = false);
+      }
     }
-  ];
+  }
 
   String? selectedFeatureId;
   String selectedCategory = 'Features'; 
@@ -381,22 +318,24 @@ class _AdminNotificationScreenState extends State<AdminNotificationScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                value: selectedFeatureId,
-                hint: const Text('Choose a feature...'),
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                items: appFeatures.map((feature) {
-                  return DropdownMenuItem<String>(
-                    value: feature['id'],
-                    child: Text(feature['name']!),
-                  );
-                }).toList(),
-                onChanged: (val) {
-                  setState(() {
-                    selectedFeatureId = val;
-                  });
-                },
-              ),
+              isLoadingFeatures
+                  ? const CircularProgressIndicator()
+                  : DropdownButtonFormField<String>(
+                      value: selectedFeatureId,
+                      hint: const Text('Choose a feature...'),
+                      decoration: const InputDecoration(border: OutlineInputBorder()),
+                      items: appFeatures.map((feature) {
+                        return DropdownMenuItem<String>(
+                          value: feature['id'],
+                          child: Text(feature['name']!),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        setState(() {
+                          selectedFeatureId = val;
+                        });
+                      },
+                    ),
               const SizedBox(height: 32),
             ] else ...[
               const SizedBox(height: 16),
