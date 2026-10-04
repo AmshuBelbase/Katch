@@ -8,6 +8,7 @@ import 'package:alarm/alarm.dart';
 import '../providers/api_provider.dart';
 import '../screens/settings_screen.dart';
 import '../screens/admin_notification_screen.dart';
+import '../screens/admin_categories_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -18,123 +19,194 @@ class AppDrawer extends StatelessWidget {
     final userName = user?.userMetadata?['name'] as String? ?? 'User';
     final userEmail = user?.email ?? '';
     final avatarUrl = user?.userMetadata?['avatar_url'] as String?;
-    
+
     return Drawer(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
           Expanded(
             child: ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          DrawerHeader(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.end,
+              padding: EdgeInsets.zero,
               children: [
-                CircleAvatar(
-                  radius: 24,
-                  backgroundColor: Theme.of(context).colorScheme.onPrimary,
-                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
-                  child: avatarUrl == null
-                      ? Text(
-                          userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                DrawerHeader(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Theme.of(
+                          context,
+                        ).colorScheme.onPrimary,
+                        backgroundImage: avatarUrl != null
+                            ? NetworkImage(avatarUrl)
+                            : null,
+                        child: avatarUrl == null
+                            ? Text(
+                                userName.isNotEmpty
+                                    ? userName[0].toUpperCase()
+                                    : 'U',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        userName,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (userEmail.isNotEmpty)
+                        Text(
+                          userEmail,
                           style: TextStyle(
-                            color: Theme.of(context).colorScheme.primary,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimary.withOpacity(0.8),
+                            fontSize: 14,
                           ),
-                        )
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  userName,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                        ),
+                    ],
                   ),
                 ),
-                if (userEmail.isNotEmpty)
-                  Text(
-                    userEmail,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.8),
-                      fontSize: 14,
-                    ),
+                ListTile(
+                  leading: Icon(
+                    Icons.settings,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
-              ],
-            ),
-          ),
-          ListTile(
-            leading: Icon(Icons.settings, color: Theme.of(context).colorScheme.primary),
-            title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.w500)),
-            onTap: () {
-              Navigator.pop(context); // Close drawer
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const SettingsScreen()),
-              );
-            },
-          ),
-          Consumer<ApiProvider>(
-            builder: (context, api, child) {
-              if (api.isAdmin) {
-                return ListTile(
-                  leading: Icon(Icons.admin_panel_settings, color: Theme.of(context).colorScheme.primary),
-                  title: const Text('Admin Tools', style: TextStyle(fontWeight: FontWeight.w500)),
+                  title: const Text(
+                    'Settings',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
                   onTap: () {
                     Navigator.pop(context); // Close drawer
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const AdminNotificationScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
                     );
                   },
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-          ListTile(
-            leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.primary),
-            title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w500)),
-            onTap: () async {
-              final api = Provider.of<ApiProvider>(context, listen: false);
-              String? token = await FirebaseMessaging.instance.getToken();
-              if (token != null && context.mounted) {
-                await api.removeFcmToken(token);
-              }
-              api.clearData();
-              await Supabase.instance.client.auth.signOut();
-            },
-          ),
-        ],
-      ),
+                ),
+                Consumer<ApiProvider>(
+                  builder: (context, api, child) {
+                    if (api.isAdmin) {
+                      return ExpansionTile(
+                        leading: Icon(
+                          Icons.admin_panel_settings,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        title: const Text(
+                          'Admin Tools',
+                          style: TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                        children: [
+                          ListTile(
+                            contentPadding: const EdgeInsets.only(left: 72),
+                            title: const Text('Initiate Notifications'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const AdminNotificationScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                          ListTile(
+                            contentPadding: const EdgeInsets.only(left: 72),
+                            title: const Text('Default Categories'),
+                            onTap: () {
+                              Navigator.pop(context);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const AdminCategoriesScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+                ListTile(
+                  leading: Icon(
+                    Icons.logout,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: const Text(
+                    'Sign Out',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  onTap: () async {
+                    final api = Provider.of<ApiProvider>(
+                      context,
+                      listen: false,
+                    );
+                    String? token = await FirebaseMessaging.instance.getToken();
+                    if (token != null && context.mounted) {
+                      await api.removeFcmToken(token);
+                    }
+                    api.clearData();
+                    await Supabase.instance.client.auth.signOut();
+                  },
+                ),
+              ],
+            ),
           ),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
               child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
-                          height: 16,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset(
+                        Theme.of(context).brightness == Brightness.dark
+                            ? 'assets/katch_logo_dark.png'
+                            : 'assets/katch_logo_light.png',
+                        height: 16,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'KATCH',
+                        style: GoogleFonts.michroma(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Theme.of(context).colorScheme.primary,
                         ),
-                        const SizedBox(width: 6),
-                        Text('KATCH', style: GoogleFonts.michroma(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Theme.of(context).colorScheme.primary)),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    const Text('Developed by AMSHU BELBASE', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                    const Text('© 2026', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                  ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Developed by AMSHU BELBASE',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const Text(
+                    '© 2026',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
               ),
             ),
           ),

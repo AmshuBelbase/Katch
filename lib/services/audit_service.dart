@@ -9,16 +9,20 @@ class AuditService {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return; // Cannot log without authenticated user
 
-    try {
-      await Supabase.instance.client.from('audit_logs').insert({
-        'user_id': user.id,
-        'action_performed': actionType,
-        'content': content ?? {},
-        'version': 1,
-      });
-    } catch (e) {
-      print('AuditService failed to log $actionType: $e');
-    }
+    // Delay the network initialization by 500ms so it doesn't interrupt 
+    // the 300ms UI screen transition animations.
+    Future.delayed(const Duration(milliseconds: 500), () async {
+      try {
+        await Supabase.instance.client.from('audit_logs').insert({
+          'user_id': user.id,
+          'action_performed': actionType,
+          'content': content ?? {},
+          'version': 1,
+        });
+      } catch (e) {
+        print('AuditService failed to log $actionType: $e');
+      }
+    });
   }
 
   Future<void> logAppLaunch() async {
