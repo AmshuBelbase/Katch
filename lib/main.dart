@@ -24,6 +24,7 @@ import 'screens/transactions_screen.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'tutorial_keys.dart';
+import 'services/audit_service.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -110,6 +111,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
             api.fetchTransactions();
             api.fetchChatStatus();
             api.fetchUserRole();
+            AuditService().logAppLaunch();
           }
         }
         setState(() {});
@@ -185,7 +187,21 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
     }
   }
 
+  String _getScreenName(int index) {
+    switch (index) {
+      case 0: return 'Add';
+      case 1: return 'Notes';
+      case 2: return 'AI Chat';
+      case 3: return 'Reminders';
+      case 4: return 'Finance';
+      default: return 'Unknown';
+    }
+  }
+
   void switchTab(int index) {
+    if (_currentIndex != index) {
+      AuditService().logScreenSwitch(_getScreenName(_currentIndex), _getScreenName(index));
+    }
     setState(() => _currentIndex = index);
   }
 
@@ -591,6 +607,9 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (index) {
+          if (_currentIndex != index) {
+            AuditService().logScreenSwitch(_getScreenName(_currentIndex), _getScreenName(index));
+          }
           setState(() {
             _currentIndex = index;
           });
