@@ -24,9 +24,9 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
   void _onDateSelected(DateTime date) {
     setState(() {
-      if (_selectedDate != null && 
-          _selectedDate!.year == date.year && 
-          _selectedDate!.month == date.month && 
+      if (_selectedDate != null &&
+          _selectedDate!.year == date.year &&
+          _selectedDate!.month == date.month &&
           _selectedDate!.day == date.day) {
         _selectedDate = null;
       } else {
@@ -48,18 +48,27 @@ class _RemindersScreenState extends State<RemindersScreen> {
     return Scaffold(
       drawer: const AppDrawer(),
       appBar: AppBar(
-          actions: [
-            
-          ],
+        actions: [],
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Image.asset(
-              Theme.of(context).brightness == Brightness.dark ? 'assets/katch_logo_dark.png' : 'assets/katch_logo_light.png',
+              Theme.of(context).brightness == Brightness.dark
+                  ? 'assets/katch_logo_dark.png'
+                  : 'assets/katch_logo_light.png',
               height: 24,
             ),
             const SizedBox(width: 8),
-            Text('KATCH', style: GoogleFonts.michroma(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).brightness == Brightness.dark ? Colors.white : Theme.of(context).colorScheme.primary)),
+            Text(
+              'KATCH',
+              style: GoogleFonts.michroma(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ],
         ),
       ),
@@ -69,20 +78,74 @@ class _RemindersScreenState extends State<RemindersScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          int activeRepeatingCount = api.reminders.where((r) => r['recurrence_rule'] != null && r['is_completed'] != true).length;
-          int activeOneOffCount = api.reminders.where((r) => r['recurrence_rule'] == null && r['is_completed'] != true).length;
-          bool showTabs = activeRepeatingCount > 5 && activeOneOffCount > 0;
-          
+          bool isSameDay(DateTime utcDue) {
+            if (_selectedDate == null) return true;
+            DateTime dueLocal = utcDue.toLocal();
+            if (dueLocal.year >= 2099)
+              return false; // Hide "no deadline" if specific date picked
+            return dueLocal.year == _selectedDate!.year &&
+                dueLocal.month == _selectedDate!.month &&
+                dueLocal.day == _selectedDate!.day;
+          }
+
+          int activeRepeatingCount = api.reminders.where((r) {
+            if (r['is_completed'] == true) return false;
+            if (r['recurrence_rule'] == null) return false;
+            DateTime dueUtc = DateTime.parse(r['due_datetime']);
+            if (!dueUtc.isUtc) dueUtc = DateTime.parse('${r['due_datetime']}Z');
+            return isSameDay(dueUtc);
+          }).length;
+
+          int activeOneOffCount = api.reminders.where((r) {
+            if (r['is_completed'] == true) return false;
+            if (r['recurrence_rule'] != null) return false;
+            DateTime dueUtc = DateTime.parse(r['due_datetime']);
+            if (!dueUtc.isUtc) dueUtc = DateTime.parse('${r['due_datetime']}Z');
+            return isSameDay(dueUtc);
+          }).length;
+
+          bool showTabs =
+              activeRepeatingCount > 0 ||
+              activeOneOffCount > 0; // Show tabs if there's anything to filter
+
+          int effectiveMode = _currentMode;
+          if (activeOneOffCount == 0 &&
+              activeRepeatingCount > 0 &&
+              _currentMode == 0) {
+            effectiveMode = 1;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _currentMode != 1)
+                setState(() => _currentMode = 1);
+            });
+          } else if (activeRepeatingCount == 0 &&
+              activeOneOffCount > 0 &&
+              _currentMode == 1) {
+            effectiveMode = 0;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && _currentMode != 0)
+                setState(() => _currentMode = 0);
+            });
+          }
+
           List<dynamic> displayReminders = List.from(api.reminders);
           if (showTabs) {
-            displayReminders = displayReminders.where((r) => _currentMode == 0 ? r['recurrence_rule'] == null : r['recurrence_rule'] != null).toList();
+            displayReminders = displayReminders
+                .where(
+                  (r) => effectiveMode == 0
+                      ? r['recurrence_rule'] == null
+                      : r['recurrence_rule'] != null,
+                )
+                .toList();
           }
 
           if (displayReminders.isEmpty && api.isTutorialActive) {
             displayReminders.add({
               'id': 'dummy',
               'task_name': 'Sample Task',
-              'due_datetime': DateTime.now().toUtc().add(const Duration(hours: 2)).toIso8601String(),
+              'due_datetime': DateTime.now()
+                  .toUtc()
+                  .add(const Duration(hours: 2))
+                  .toIso8601String(),
               'is_completed': false,
               'recurrence_rule': 'FREQ=DAILY',
               'status': 'both',
@@ -91,7 +154,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
           final nowUtc = DateTime.now().toUtc();
           final nowLocal = DateTime.now();
-          
+
           List<dynamic> overdue = [];
           List<dynamic> inAnHour = [];
           List<dynamic> today = [];
@@ -107,19 +170,23 @@ class _RemindersScreenState extends State<RemindersScreen> {
               dueUtc = DateTime.parse('${r['due_datetime']}Z');
             }
             DateTime dueLocal = dueUtc.toLocal();
-            
+
             bool isNoDeadline = dueUtc.year >= 2099;
-            
+
             if (_selectedDate != null) {
-              if (dueLocal.year != _selectedDate!.year || 
-                  dueLocal.month != _selectedDate!.month || 
+              if (dueLocal.year != _selectedDate!.year ||
+                  dueLocal.month != _selectedDate!.month ||
                   dueLocal.day != _selectedDate!.day) {
                 continue;
               }
-              if (isNoDeadline) continue; // Hide "no deadline" tasks if a specific date is selected
+              if (isNoDeadline)
+                continue; // Hide "no deadline" tasks if a specific date is selected
             }
-            
-            bool isDueToday = dueLocal.year == nowLocal.year && dueLocal.month == nowLocal.month && dueLocal.day == nowLocal.day;
+
+            bool isDueToday =
+                dueLocal.year == nowLocal.year &&
+                dueLocal.month == nowLocal.month &&
+                dueLocal.day == nowLocal.day;
 
             if (r['is_completed'] == true) {
               if (isDueToday && !isNoDeadline) {
@@ -129,12 +196,12 @@ class _RemindersScreenState extends State<RemindersScreen> {
               }
               continue;
             }
-            
+
             if (isNoDeadline) {
               noDeadlines.add(r);
               continue;
             }
-            
+
             Duration diffFromNow = dueUtc.difference(nowUtc);
 
             if (diffFromNow.isNegative) {
@@ -162,33 +229,24 @@ class _RemindersScreenState extends State<RemindersScreen> {
             completedList.addAll(completedPast.take(needed));
           }
 
-          List<List<dynamic>> allLists = [overdue, inAnHour, today, upcoming, completedList, noDeadlines];
+          List<List<dynamic>> allLists = [
+            overdue,
+            inAnHour,
+            today,
+            upcoming,
+            completedList,
+            noDeadlines,
+          ];
           List<dynamic>? firstNonEmptyList;
           for (var l in allLists) {
-             if (l.isNotEmpty) { firstNonEmptyList = l; break; }
+            if (l.isNotEmpty) {
+              firstNonEmptyList = l;
+              break;
+            }
           }
 
           return Column(
             children: [
-              if (showTabs)
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: SegmentedButton<int>(
-                      segments: const [
-                        ButtonSegment(value: 0, label: Text('One-Off')),
-                        ButtonSegment(value: 1, label: Text('Repeating')),
-                      ],
-                      selected: {_currentMode},
-                      onSelectionChanged: (Set<int> newSelection) {
-                        setState(() {
-                          _currentMode = newSelection.first;
-                        });
-                      },
-                    ),
-                  ),
-                ),
               Expanded(
                 child: RefreshIndicator(
                   onRefresh: () async {
@@ -197,61 +255,162 @@ class _RemindersScreenState extends State<RemindersScreen> {
                   child: CustomScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     slivers: [
-                    SliverToBoxAdapter(
-                child: CustomShowcase(
-                  showcaseKey: TutorialKeys.reminderCardKey,
-                  title: 'Task Calendar',
-                  description: 'Click on any date to filter reminders for that day. Click again to clear.',
-                  child: TaskCalendar(
-                    reminders: displayReminders, // Filtered reminders passed to calendar!
-                    selectedDate: _selectedDate,
-                    onDateSelected: _onDateSelected,
-                  ),
-                )
-              ),
-              if (overdue.isNotEmpty)
-                _buildSectionHeader('Overdue', AppTheme.error),
-              if (overdue.isNotEmpty)
-                _buildList(overdue, api, isFirstList: overdue == firstNonEmptyList),
-                
-              if (inAnHour.isNotEmpty)
-                _buildSectionHeader('In an hour', Colors.orange),
-              if (inAnHour.isNotEmpty)
-                _buildList(inAnHour, api, isFirstList: inAnHour == firstNonEmptyList),
-                
-              if (today.isNotEmpty)
-                _buildSectionHeader('Today', Theme.of(context).colorScheme.primary),
-              if (today.isNotEmpty)
-                _buildList(today, api, isFirstList: today == firstNonEmptyList),
-                
-              if (upcoming.isNotEmpty)
-                _buildSectionHeader('Upcoming', Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
-              if (upcoming.isNotEmpty)
-                _buildList(upcoming, api, isFirstList: upcoming == firstNonEmptyList),
-                
-              if (noDeadlines.isNotEmpty)
-                _buildSectionHeader('No deadlines', Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
-              if (noDeadlines.isNotEmpty)
-                _buildList(noDeadlines, api, isFirstList: noDeadlines == firstNonEmptyList),
-                
-              if (completedList.isNotEmpty)
-                _buildSectionHeader('Completed', Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-              if (completedList.isNotEmpty)
-                _buildList(completedList, api, isFirstList: completedList == firstNonEmptyList),
+                      SliverToBoxAdapter(
+                        child: CustomShowcase(
+                          showcaseKey: TutorialKeys.reminderCardKey,
+                          title: 'Task Calendar',
+                          description:
+                              'Click on any date to filter reminders for that day. Click again to clear.',
+                          child: TaskCalendar(
+                            reminders: api
+                                .reminders, // Pass all reminders, not filtered ones!
+                            selectedDate: _selectedDate,
+                            onDateSelected: _onDateSelected,
+                          ),
+                        ),
+                      ),
+                      if (showTabs)
+                        SliverPersistentHeader(
+                          pinned: true,
+                          delegate: _StickyTabBarDelegate(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                                vertical: 8.0,
+                              ),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: SegmentedButton<int>(
+                                  segments: [
+                                    ButtonSegment(
+                                      value: 0,
+                                      label: Text(
+                                        'One-Off ($activeOneOffCount)',
+                                      ),
+                                    ),
+                                    ButtonSegment(
+                                      value: 1,
+                                      label: Text(
+                                        'Repeating ($activeRepeatingCount)',
+                                      ),
+                                    ),
+                                  ],
+                                  selected: {effectiveMode},
+                                  onSelectionChanged: (Set<int> newSelection) {
+                                    setState(() {
+                                      _currentMode = newSelection.first;
+                                    });
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      if (overdue.isNotEmpty)
+                        _buildSectionHeader('Overdue', AppTheme.error),
+                      if (overdue.isNotEmpty)
+                        _buildList(
+                          overdue,
+                          api,
+                          isFirstList: overdue == firstNonEmptyList,
+                        ),
 
-              const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
-            ],
-          ),
-        ),
-        ),
+                      if (inAnHour.isNotEmpty)
+                        _buildSectionHeader('In an hour', Colors.orange),
+                      if (inAnHour.isNotEmpty)
+                        _buildList(
+                          inAnHour,
+                          api,
+                          isFirstList: inAnHour == firstNonEmptyList,
+                        ),
+
+                      if (today.isNotEmpty)
+                        _buildSectionHeader(
+                          'Today',
+                          Theme.of(context).colorScheme.primary,
+                        ),
+                      if (today.isNotEmpty)
+                        _buildList(
+                          today,
+                          api,
+                          isFirstList: today == firstNonEmptyList,
+                        ),
+
+                      if (upcoming.isNotEmpty)
+                        _buildSectionHeader(
+                          'Upcoming',
+                          Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.7),
+                        ),
+                      if (upcoming.isNotEmpty)
+                        _buildList(
+                          upcoming,
+                          api,
+                          isFirstList: upcoming == firstNonEmptyList,
+                        ),
+
+                      if (noDeadlines.isNotEmpty)
+                        _buildSectionHeader(
+                          'No deadlines',
+                          Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.6),
+                        ),
+                      if (noDeadlines.isNotEmpty)
+                        _buildList(
+                          noDeadlines,
+                          api,
+                          isFirstList: noDeadlines == firstNonEmptyList,
+                        ),
+
+                      if (completedList.isNotEmpty)
+                        _buildSectionHeader(
+                          'Completed',
+                          Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                      if (completedList.isNotEmpty)
+                        _buildList(
+                          completedList,
+                          api,
+                          isFirstList: completedList == firstNonEmptyList,
+                        ),
+
+                      if (allLists.every((l) => l.isEmpty))
+                        SliverToBoxAdapter(
+                          child: Padding(
+                            padding: const EdgeInsets.all(48.0),
+                            child: Center(
+                              child: Text(
+                                _selectedDate != null
+                                    ? 'No reminders for this date.'
+                                    : 'No reminders yet.',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.5),
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                      const SliverPadding(
+                        padding: EdgeInsets.only(bottom: 100),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           );
-      },
-    ),
+        },
+      ),
     );
   }
-
-
 
   Widget _buildSectionHeader(String title, Color color) {
     return SliverToBoxAdapter(
@@ -259,182 +418,317 @@ class _RemindersScreenState extends State<RemindersScreen> {
         padding: const EdgeInsets.only(left: 16, top: 16, bottom: 8),
         child: Text(
           title,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildList(List<dynamic> items, ApiProvider api, {bool isFirstList = false}) {
+  Widget _buildList(
+    List<dynamic> items,
+    ApiProvider api, {
+    bool isFirstList = false,
+  }) {
     return SliverList(
-      delegate: SliverChildBuilderDelegate(
-        (context, index) {
-          final item = items[index];
-          DateTime dueUtc = DateTime.parse(item['due_datetime']);
-          DateTime dueLocal = dueUtc.toLocal();
-          
-          bool isNoDeadline = dueUtc.year >= 2099;
-          String formattedDue = isNoDeadline ? 'No deadline' : DateFormat('MMM d, h:mm a').format(dueLocal);
-          
-          bool isOverdue = !isNoDeadline && dueUtc.isBefore(DateTime.now().toUtc());
+      delegate: SliverChildBuilderDelegate((context, index) {
+        final item = items[index];
+        DateTime dueUtc = DateTime.parse(item['due_datetime']);
+        DateTime dueLocal = dueUtc.toLocal();
 
-          return Dismissible(
-            key: Key(item['id'].toString()),
-            direction: DismissDirection.endToStart,
-            background: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              color: AppTheme.errorColor(context),
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 20.0),
-              child: const Icon(Icons.delete, color: Colors.white),
-            ),
-            onDismissed: (direction) {
-              final itemId = item['id'].toString();
-              if (itemId == 'dummy') return;
-              
-              api.hideReminderOptimistically(itemId);
-              UndoHelper.showUndoDeleteSnackbar(
-                context: context,
-                itemName: 'Reminder',
-                onUndo: () => api.fetchReminders(),
-                onExecute: () => api.deleteReminder(itemId),
-              );
+        bool isNoDeadline = dueUtc.year >= 2099;
+        String formattedDue = isNoDeadline
+            ? 'No deadline'
+            : DateFormat('MMM d, h:mm a').format(dueLocal);
+
+        bool isOverdue =
+            !isNoDeadline && dueUtc.isBefore(DateTime.now().toUtc());
+
+        return Dismissible(
+          key: Key(item['id'].toString()),
+          direction: DismissDirection.endToStart,
+          background: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            color: AppTheme.errorColor(context),
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 20.0),
+            child: const Icon(Icons.delete, color: Colors.white),
+          ),
+          onDismissed: (direction) {
+            final itemId = item['id'].toString();
+            if (itemId == 'dummy') return;
+
+            api.hideReminderOptimistically(itemId);
+            UndoHelper.showUndoDeleteSnackbar(
+              context: context,
+              itemName: 'Reminder',
+              onUndo: () => api.fetchReminders(),
+              onExecute: () => api.deleteReminder(itemId),
+            );
+          },
+          child: InkWell(
+            onTap: () {
+              if (item['id'].toString() == 'dummy') return;
+              _showNoteDialog(context, item, api);
             },
-            child: InkWell(
-              onTap: () {
-                if (item['id'].toString() == 'dummy') return;
-                _showNoteDialog(context, item, api);
-              },
-              child: Card(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Card(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: ListTile(
-                leading: index == 0 && isFirstList ? CustomShowcase(
-                  showcaseKey: TutorialKeys.reminderCheckboxKey,
-                  title: 'Complete Tasks',
-                  description: 'Check off a task to mark it as completed. It will automatically move to the Completed section.',
-                  child: Checkbox(
-                    value: item['is_completed'] == true,
-                    onChanged: (val) {
-                      if (item['id'].toString() == 'dummy') return;
-                      if (val != null) {
-                        api.updateReminderSettings(item['id'].toString(), val, item['status'] ?? 'pending');
-                      }
-                    },
-                    activeColor: AppTheme.success,
-                    checkColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                  ),
-                ) : Checkbox(
-                  value: item['is_completed'] == true,
-                  onChanged: (val) {
-                    if (item['id'].toString() == 'dummy') return;
-                    if (val != null) {
-                      api.updateReminderSettings(item['id'].toString(), val, item['status'] ?? 'pending');
-                    }
-                  },
-                  activeColor: AppTheme.success,
-                  checkColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                ),
+                leading: index == 0 && isFirstList
+                    ? CustomShowcase(
+                        showcaseKey: TutorialKeys.reminderCheckboxKey,
+                        title: 'Complete Tasks',
+                        description:
+                            'Check off a task to mark it as completed. It will automatically move to the Completed section.',
+                        child: Checkbox(
+                          value: item['is_completed'] == true,
+                          onChanged: (val) {
+                            if (item['id'].toString() == 'dummy') return;
+                            if (val != null) {
+                              api.updateReminderSettings(
+                                item['id'].toString(),
+                                val,
+                                item['status'] ?? 'pending',
+                              );
+                            }
+                          },
+                          activeColor: AppTheme.success,
+                          checkColor: Theme.of(context).colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      )
+                    : Checkbox(
+                        value: item['is_completed'] == true,
+                        onChanged: (val) {
+                          if (item['id'].toString() == 'dummy') return;
+                          if (val != null) {
+                            api.updateReminderSettings(
+                              item['id'].toString(),
+                              val,
+                              item['status'] ?? 'pending',
+                            );
+                          }
+                        },
+                        activeColor: AppTheme.success,
+                        checkColor: Theme.of(context).colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
                 title: Text(
                   item['task_name'],
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
-                    decoration: item['is_completed'] == true ? TextDecoration.lineThrough : null,
-                    color: item['is_completed'] == true ? Colors.grey : Theme.of(context).colorScheme.onSurface,
+                    decoration: item['is_completed'] == true
+                        ? TextDecoration.lineThrough
+                        : null,
+                    color: item['is_completed'] == true
+                        ? Colors.grey
+                        : Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                subtitle: isNoDeadline ? null : Row(
-                  children: [
-                    Icon(Icons.calendar_today, size: 12, color: isOverdue ? AppTheme.error : Colors.grey),
-                    const SizedBox(width: 4),
-                    Text(
-                      formattedDue,
-                      style: TextStyle(
-                        color: isOverdue ? AppTheme.error : Colors.grey,
-                        fontSize: 12,
+                subtitle: isNoDeadline
+                    ? null
+                    : Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 12,
+                            color: isOverdue ? AppTheme.error : Colors.grey,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            formattedDue,
+                            style: TextStyle(
+                              color: isOverdue ? AppTheme.error : Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
+                          if (item['recurrence_rule'] != null)
+                            const Padding(
+                              padding: EdgeInsets.only(left: 6),
+                              child: Icon(
+                                Icons.repeat,
+                                size: 14,
+                                color: Colors.blueGrey,
+                              ),
+                            ),
+                          if (item['next_due_datetime'] != null) ...[
+                            const SizedBox(width: 4),
+                            Text(
+                              DateFormat('MMM d, h:mm a').format(
+                                DateTime.parse(
+                                  item['next_due_datetime'],
+                                ).toLocal(),
+                              ),
+                              style: const TextStyle(
+                                color: Colors.blueGrey,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
-                    ),
-                    if (item['recurrence_rule'] != null)
-                      const Padding(
-                        padding: EdgeInsets.only(left: 6),
-                        child: Icon(Icons.repeat, size: 14, color: Colors.blueGrey),
-                      ),
-                    if (item['next_due_datetime'] != null) ...[
-                      const SizedBox(width: 4),
-                      Text(
-                        DateFormat('MMM d, h:mm a').format(DateTime.parse(item['next_due_datetime']).toLocal()),
-                        style: const TextStyle(
-                          color: Colors.blueGrey,
-                          fontSize: 12,
+                trailing: index == 0 && isFirstList
+                    ? CustomShowcase(
+                        showcaseKey: TutorialKeys.reminderAlarmIconKey,
+                        title: 'Notification Type',
+                        description:
+                            'Click here to choose how you want to be notified (Silent, Push, Alarm, or Email).',
+                        onNextOverride: () {
+                          ShowCaseWidget.of(context).dismiss();
+                          TutorialKeys.dashboardShellKey.currentState
+                              ?.continueTutorialToFinance();
+                        },
+                        child: PopupMenuButton<String>(
+                          icon: _getStatusIcon(item['status']),
+                          onSelected: (String newValue) {
+                            api.updateReminderSettings(
+                              item['id'].toString(),
+                              item['is_completed'] == true,
+                              newValue,
+                            );
+                          },
+                          itemBuilder: (BuildContext context) =>
+                              <PopupMenuEntry<String>>[
+                                const PopupMenuItem<String>(
+                                  value: 'none',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.notifications_off,
+                                        size: 20,
+                                        color: Colors.grey,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text('Silent'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'push_only',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.notifications,
+                                        size: 20,
+                                        color: Colors.blue,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text('Push Only'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'phone',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.alarm,
+                                        size: 20,
+                                        color: Colors.orange,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text('Push + Alarm'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem<String>(
+                                  value: 'both',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.notifications_active,
+                                        size: 20,
+                                        color: Colors.green,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text('Push + Alarm + Email'),
+                                    ],
+                                  ),
+                                ),
+                              ],
                         ),
+                      )
+                    : PopupMenuButton<String>(
+                        icon: _getStatusIcon(item['status']),
+                        onSelected: (String newValue) {
+                          api.updateReminderSettings(
+                            item['id'].toString(),
+                            item['is_completed'] == true,
+                            newValue,
+                          );
+                        },
+                        itemBuilder: (BuildContext context) =>
+                            <PopupMenuEntry<String>>[
+                              const PopupMenuItem<String>(
+                                value: 'none',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.notifications_off,
+                                      size: 20,
+                                      color: Colors.grey,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text('Silent'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'push_only',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.notifications,
+                                      size: 20,
+                                      color: Colors.blue,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text('Push Only'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'phone',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.alarm,
+                                      size: 20,
+                                      color: Colors.orange,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text('Push + Alarm'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'both',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.notifications_active,
+                                      size: 20,
+                                      color: Colors.green,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text('Push + Alarm + Email'),
+                                  ],
+                                ),
+                              ),
+                            ],
                       ),
-                    ],
-                  ],
-                ),
-                trailing: index == 0 && isFirstList ? CustomShowcase(
-                  showcaseKey: TutorialKeys.reminderAlarmIconKey,
-                  title: 'Notification Type',
-                  description: 'Click here to choose how you want to be notified (Silent, Push, Alarm, or Email).',
-                  onNextOverride: () {
-                    ShowCaseWidget.of(context).dismiss();
-                    TutorialKeys.dashboardShellKey.currentState?.continueTutorialToFinance();
-                  },
-                  child: PopupMenuButton<String>(
-                    icon: _getStatusIcon(item['status']),
-                    onSelected: (String newValue) {
-                      api.updateReminderSettings(item['id'].toString(), item['is_completed'] == true, newValue);
-                    },
-                    itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
-                        value: 'none',
-                        child: Row(children: [Icon(Icons.notifications_off, size: 20, color: Colors.grey), SizedBox(width: 8), Text('Silent')]),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'push_only',
-                        child: Row(children: [Icon(Icons.notifications, size: 20, color: Colors.blue), SizedBox(width: 8), Text('Push Only')]),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'phone',
-                        child: Row(children: [Icon(Icons.alarm, size: 20, color: Colors.orange), SizedBox(width: 8), Text('Push + Alarm')]),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'both',
-                        child: Row(children: [Icon(Icons.notifications_active, size: 20, color: Colors.green), SizedBox(width: 8), Text('Push + Alarm + Email')]),
-                      ),
-                    ],
-                  ),
-                ) : PopupMenuButton<String>(
-                  icon: _getStatusIcon(item['status']),
-                  onSelected: (String newValue) {
-                    api.updateReminderSettings(item['id'].toString(), item['is_completed'] == true, newValue);
-                  },
-                  itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                    const PopupMenuItem<String>(
-                      value: 'none',
-                      child: Row(children: [Icon(Icons.notifications_off, size: 20, color: Colors.grey), SizedBox(width: 8), Text('Silent')]),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'push_only',
-                      child: Row(children: [Icon(Icons.notifications, size: 20, color: Colors.blue), SizedBox(width: 8), Text('Push Only')]),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'phone',
-                      child: Row(children: [Icon(Icons.alarm, size: 20, color: Colors.orange), SizedBox(width: 8), Text('Push + Alarm')]),
-                    ),
-                    const PopupMenuItem<String>(
-                      value: 'both',
-                      child: Row(children: [Icon(Icons.notifications_active, size: 20, color: Colors.green), SizedBox(width: 8), Text('Push + Alarm + Email')]),
-                    ),
-                  ],
-                ),
               ),
             ),
-            ),
-          );
-        },
-        childCount: items.length,
-      ),
+          ),
+        );
+      }, childCount: items.length),
     );
   }
 
@@ -450,9 +744,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
             'Original Note',
             style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
-          content: SingleChildScrollView(
-            child: Text(rawText),
-          ),
+          content: SingleChildScrollView(child: Text(rawText)),
           actions: [
             SizedBox(
               width: MediaQuery.of(context).size.width,
@@ -499,14 +791,22 @@ class _RemindersScreenState extends State<RemindersScreen> {
     switch (status) {
       case 'none':
       case 'Not needed':
-        return const Icon(Icons.notifications_off, color: Colors.grey, size: 20);
+        return const Icon(
+          Icons.notifications_off,
+          color: Colors.grey,
+          size: 20,
+        );
       case 'push_only':
         return const Icon(Icons.notifications, color: Colors.blue, size: 20);
       case 'phone':
         return const Icon(Icons.alarm, color: Colors.orange, size: 20);
       case 'both':
       case 'pending':
-        return const Icon(Icons.notifications_active, color: Colors.green, size: 20);
+        return const Icon(
+          Icons.notifications_active,
+          color: Colors.green,
+          size: 20,
+        );
       case 'sent_phone':
         return Row(
           mainAxisSize: MainAxisSize.min,
@@ -522,7 +822,37 @@ class _RemindersScreenState extends State<RemindersScreen> {
         return const Icon(Icons.smartphone, color: Colors.blue, size: 20);
     }
   }
+}
 
+class _StickyTabBarDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+
+  _StickyTabBarDelegate({required this.child});
+
+  @override
+  double get minExtent => 60.0;
+
+  @override
+  double get maxExtent => 60.0;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      color: Theme.of(
+        context,
+      ).scaffoldBackgroundColor, // matches background to hide content scrolling under
+      child: child,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_StickyTabBarDelegate oldDelegate) {
+    return true; // We want it to rebuild when counts change
+  }
 }
 
 class TaskCalendar extends StatefulWidget {
@@ -531,7 +861,7 @@ class TaskCalendar extends StatefulWidget {
   final Function(DateTime) onDateSelected;
 
   const TaskCalendar({
-    super.key, 
+    super.key,
     required this.reminders,
     required this.selectedDate,
     required this.onDateSelected,
@@ -552,11 +882,17 @@ class _TaskCalendarState extends State<TaskCalendar> {
   }
 
   void _nextMonth() {
-    _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   void _prevMonth() {
-    _pageController.previousPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -567,7 +903,9 @@ class _TaskCalendarState extends State<TaskCalendar> {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1)),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -578,7 +916,11 @@ class _TaskCalendarState extends State<TaskCalendar> {
               controller: _pageController,
               itemBuilder: (context, index) {
                 final monthOffset = index - 10000;
-                final currentMonth = DateTime(_today.year, _today.month + monthOffset, 1);
+                final currentMonth = DateTime(
+                  _today.year,
+                  _today.month + monthOffset,
+                  1,
+                );
                 return _buildMonthView(currentMonth);
               },
             ),
@@ -589,11 +931,14 @@ class _TaskCalendarState extends State<TaskCalendar> {
   }
 
   Widget _buildMonthView(DateTime monthDate) {
-    final int daysInMonth = DateUtils.getDaysInMonth(monthDate.year, monthDate.month);
+    final int daysInMonth = DateUtils.getDaysInMonth(
+      monthDate.year,
+      monthDate.month,
+    );
     final int firstWeekday = monthDate.weekday; // 1 (Mon) to 7 (Sun)
-    
+
     // Adjust weekday so Monday is 1
-    final int emptyPrefixDays = firstWeekday - 1; 
+    final int emptyPrefixDays = firstWeekday - 1;
 
     final List<String> weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -621,11 +966,22 @@ class _TaskCalendarState extends State<TaskCalendar> {
         // Weekday row
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: weekDays.map((day) => Expanded(
-            child: Center(
-              child: Text(day, style: TextStyle(color: Colors.grey.shade600, fontSize: 12, fontWeight: FontWeight.bold)),
-            ),
-          )).toList(),
+          children: weekDays
+              .map(
+                (day) => Expanded(
+                  child: Center(
+                    child: Text(
+                      day,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
         ),
         const SizedBox(height: 8),
         // Calendar Grid
@@ -643,29 +999,43 @@ class _TaskCalendarState extends State<TaskCalendar> {
               if (index < emptyPrefixDays) {
                 return const SizedBox();
               }
-              
+
               final int dayNumber = index - emptyPrefixDays + 1;
-              final DateTime cellDate = DateTime(monthDate.year, monthDate.month, dayNumber);
-              
-              bool isToday = cellDate.year == _today.year && cellDate.month == _today.month && cellDate.day == _today.day;
-              
+              final DateTime cellDate = DateTime(
+                monthDate.year,
+                monthDate.month,
+                dayNumber,
+              );
+
+              bool isToday =
+                  cellDate.year == _today.year &&
+                  cellDate.month == _today.month &&
+                  cellDate.day == _today.day;
+
               // Find reminders for this cell
               int taskCount = 0;
 
               for (var r in widget.reminders) {
                 if (r['is_completed'] == true) continue;
                 DateTime due = DateTime.parse(r['due_datetime']).toLocal();
-                if (due.year == cellDate.year && due.month == cellDate.month && due.day == cellDate.day) {
+                if (due.year == cellDate.year &&
+                    due.month == cellDate.month &&
+                    due.day == cellDate.day) {
                   taskCount++;
                 }
               }
 
               // Overdue logic: if the cell date is in the past entirely AND it has tasks
-              DateTime startOfToday = DateTime(_today.year, _today.month, _today.day);
+              DateTime startOfToday = DateTime(
+                _today.year,
+                _today.month,
+                _today.day,
+              );
               bool cellIsInPast = cellDate.isBefore(startOfToday);
               bool showOverdueBackground = cellIsInPast && taskCount > 0;
-              
-              bool isSelected = widget.selectedDate != null &&
+
+              bool isSelected =
+                  widget.selectedDate != null &&
                   cellDate.year == widget.selectedDate!.year &&
                   cellDate.month == widget.selectedDate!.month &&
                   cellDate.day == widget.selectedDate!.day;
@@ -674,49 +1044,90 @@ class _TaskCalendarState extends State<TaskCalendar> {
                 onTap: () => widget.onDateSelected(cellDate),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isSelected 
+                    color: isSelected
                         ? Theme.of(context).colorScheme.primary
-                        : (showOverdueBackground ? AppTheme.error.withOpacity(0.1) : (isToday ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Colors.transparent)),
+                        : (showOverdueBackground
+                              ? AppTheme.error.withOpacity(0.1)
+                              : (isToday
+                                    ? Theme.of(
+                                        context,
+                                      ).colorScheme.primary.withOpacity(0.1)
+                                    : Colors.transparent)),
                     borderRadius: BorderRadius.circular(8),
-                    border: isSelected 
-                        ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
-                        : (isToday ? Border.all(color: Theme.of(context).colorScheme.primary, width: 1.5) : Border.all(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1))),
+                    border: isSelected
+                        ? Border.all(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 2,
+                          )
+                        : (isToday
+                              ? Border.all(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 1.5,
+                                )
+                              : Border.all(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface.withOpacity(0.1),
+                                )),
                   ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: 4,
-                      left: 6,
-                      child: Text(
-                        dayNumber.toString(),
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: (isToday || isSelected) ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Theme.of(context).colorScheme.onPrimary : (isToday ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onBackground),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        top: 4,
+                        left: 6,
+                        child: Text(
+                          dayNumber.toString(),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: (isToday || isSelected)
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : (isToday
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(
+                                          context,
+                                        ).colorScheme.onBackground),
+                          ),
                         ),
                       ),
-                    ),
-                    if (taskCount > 0)
-                      Positioned(
-                        bottom: 2,
-                        right: 4,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: isSelected ? Theme.of(context).colorScheme.onPrimary : (showOverdueBackground ? AppTheme.error : Theme.of(context).colorScheme.primary),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            taskCount.toString(),
-                            style: TextStyle(color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onPrimary, fontSize: 10, fontWeight: FontWeight.bold),
+                      if (taskCount > 0)
+                        Positioned(
+                          bottom: 2,
+                          right: 4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? Theme.of(context).colorScheme.onPrimary
+                                  : (showOverdueBackground
+                                        ? AppTheme.error
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.primary),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              taskCount.toString(),
+                              style: TextStyle(
+                                color: isSelected
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.onPrimary,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
-                      )
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
           ),
         ),
       ],
