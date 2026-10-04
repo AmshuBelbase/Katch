@@ -412,179 +412,192 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
       }).toList();
     }
 
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(child: _buildFilterRow()),
-        SliverToBoxAdapter(
-          child: CustomShowcase(
-            showcaseKey: TutorialKeys.financeCardKey,
-            title: 'Finance Overview',
-            description:
-                'Your income and expenses are automatically categorized from your notes.',
-            child: _buildCashFlowHeader(netBalance, totalIncome, totalExpense),
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: _buildExpenseVisualization(categoryTotals, totalExpense),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 8.0,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Transactions',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                CustomShowcase(
-                  showcaseKey: TutorialKeys.financeAddKey,
-                  title: 'Custom Categories',
-                  description:
-                      'Add your own categories as required to keep expenses organized.',
-                  child: TextButton.icon(
-                    onPressed: () => _showAddCategoryDialog(api),
-                    icon: const Icon(Icons.add, size: 16),
-                    label: const Text('Category'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (displayedTx.isEmpty)
-          SliverFillRemaining(
-            child: Center(
-              child: Text(
-                _selectedCategoryFilter != null
-                    ? 'No transactions for $_selectedCategoryFilter.'
-                    : 'No transactions recorded in this period.',
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Provider.of<ApiProvider>(
+          context,
+          listen: false,
+        ).fetchTransactions();
+      },
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(child: _buildFilterRow()),
+          SliverToBoxAdapter(
+            child: CustomShowcase(
+              showcaseKey: TutorialKeys.financeCardKey,
+              title: 'Finance Overview',
+              description:
+                  'Your income and expenses are automatically categorized from your notes.',
+              child: _buildCashFlowHeader(
+                netBalance,
+                totalIncome,
+                totalExpense,
               ),
             ),
-          )
-        else
-          SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              // sort displayedTx so newest is first
-              displayedTx.sort((a, b) {
-                DateTime da = a['created_at'] != null
-                    ? DateTime.parse(a['created_at'])
-                    : DateTime.now();
-                DateTime db = b['created_at'] != null
-                    ? DateTime.parse(b['created_at'])
-                    : DateTime.now();
-                return db.compareTo(da);
-              });
-
-              final t = displayedTx[index];
-              final currencyFormatter = NumberFormat.currency(
-                locale: 'en_IN',
-                symbol: '₹',
-              );
-              String cat =
-                  t['category'] ??
-                  (t['transaction_type'] == 'income' ? 'Income' : 'Others');
-              DateTime date = t['created_at'] != null
-                  ? DateTime.parse(t['created_at']).toLocal()
-                  : DateTime.now();
-              bool isIncome = t['transaction_type'] == 'income';
-
-              Widget dismissibleWidget = Dismissible(
-                key: Key(t['id'].toString()),
-                direction: DismissDirection.endToStart,
-                background: Container(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
+          ),
+          SliverToBoxAdapter(
+            child: _buildExpenseVisualization(categoryTotals, totalExpense),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 8.0,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Transactions',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
-                  color: AppTheme.errorColor(context),
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20.0),
-                  child: const Icon(Icons.delete, color: Colors.white),
+                  CustomShowcase(
+                    showcaseKey: TutorialKeys.financeAddKey,
+                    title: 'Custom Categories',
+                    description:
+                        'Add your own categories as required to keep expenses organized.',
+                    child: TextButton.icon(
+                      onPressed: () => _showAddCategoryDialog(api),
+                      icon: const Icon(Icons.add, size: 16),
+                      label: const Text('Category'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (displayedTx.isEmpty)
+            SliverFillRemaining(
+              child: Center(
+                child: Text(
+                  _selectedCategoryFilter != null
+                      ? 'No transactions for $_selectedCategoryFilter.'
+                      : 'No transactions recorded in this period.',
                 ),
-                onDismissed: (direction) {
-                  final itemId = t['id'].toString();
-                  if (itemId.startsWith('dummy')) return;
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                // sort displayedTx so newest is first
+                displayedTx.sort((a, b) {
+                  DateTime da = a['created_at'] != null
+                      ? DateTime.parse(a['created_at'])
+                      : DateTime.now();
+                  DateTime db = b['created_at'] != null
+                      ? DateTime.parse(b['created_at'])
+                      : DateTime.now();
+                  return db.compareTo(da);
+                });
 
-                  Provider.of<ApiProvider>(
-                    context,
-                    listen: false,
-                  ).hideTransactionOptimistically(itemId);
-                  UndoHelper.showUndoDeleteSnackbar(
-                    context: context,
-                    itemName: 'Transaction',
-                    onUndo: () => api.fetchTransactions(),
-                    onExecute: () => api.deleteTransaction(itemId),
-                  );
-                },
-                child: InkWell(
-                  onTap: () {
-                    if (t['id'].toString().startsWith('dummy')) return;
-                    _showNoteDialog(
-                      context,
-                      t,
-                      Provider.of<ApiProvider>(context, listen: false),
-                    );
-                  },
-                  child: Card(
+                final t = displayedTx[index];
+                final currencyFormatter = NumberFormat.currency(
+                  locale: 'en_IN',
+                  symbol: '₹',
+                );
+                String cat =
+                    t['category'] ??
+                    (t['transaction_type'] == 'income' ? 'Income' : 'Others');
+                DateTime date = t['created_at'] != null
+                    ? DateTime.parse(t['created_at']).toLocal()
+                    : DateTime.now();
+                bool isIncome = t['transaction_type'] == 'income';
+
+                Widget dismissibleWidget = Dismissible(
+                  key: Key(t['id'].toString()),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
                     margin: const EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 6,
                     ),
-                    color: Theme.of(context).colorScheme.surface,
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: isIncome
-                            ? AppTheme.successColor(
-                                context,
-                              ).withValues(alpha: 0.1)
-                            : AppTheme.errorColor(
-                                context,
-                              ).withValues(alpha: 0.1),
-                        child: Icon(
-                          isIncome ? Icons.download : Icons.receipt_long,
-                          color: isIncome
-                              ? AppTheme.successColor(context)
-                              : AppTheme.errorColor(context),
+                    color: AppTheme.errorColor(context),
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20.0),
+                    child: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                  onDismissed: (direction) {
+                    final itemId = t['id'].toString();
+                    if (itemId.startsWith('dummy')) return;
+
+                    Provider.of<ApiProvider>(
+                      context,
+                      listen: false,
+                    ).hideTransactionOptimistically(itemId);
+                    UndoHelper.showUndoDeleteSnackbar(
+                      context: context,
+                      itemName: 'Transaction',
+                      onUndo: () => api.fetchTransactions(),
+                      onExecute: () => api.deleteTransaction(itemId),
+                    );
+                  },
+                  child: InkWell(
+                    onTap: () {
+                      if (t['id'].toString().startsWith('dummy')) return;
+                      _showNoteDialog(
+                        context,
+                        t,
+                        Provider.of<ApiProvider>(context, listen: false),
+                      );
+                    },
+                    child: Card(
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 6,
+                      ),
+                      color: Theme.of(context).colorScheme.surface,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: isIncome
+                              ? AppTheme.successColor(
+                                  context,
+                                ).withValues(alpha: 0.1)
+                              : AppTheme.errorColor(
+                                  context,
+                                ).withValues(alpha: 0.1),
+                          child: Icon(
+                            isIncome ? Icons.download : Icons.receipt_long,
+                            color: isIncome
+                                ? AppTheme.successColor(context)
+                                : AppTheme.errorColor(context),
+                          ),
                         ),
-                      ),
-                      title: Text(
-                        t['description'] ?? 'Transaction',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        '$cat • ${DateFormat('MMM d, h:mm a').format(date)}',
-                      ),
-                      trailing: Text(
-                        '${isIncome ? '+' : '-'}${currencyFormatter.format(double.parse(t['amount'].toString()))}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: isIncome
-                              ? AppTheme.successColor(context)
-                              : AppTheme.errorColor(context),
-                          fontSize: 16,
+                        title: Text(
+                          t['description'] ?? 'Transaction',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          '$cat • ${DateFormat('MMM d, h:mm a').format(date)}',
+                        ),
+                        trailing: Text(
+                          '${isIncome ? '+' : '-'}${currencyFormatter.format(double.parse(t['amount'].toString()))}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isIncome
+                                ? AppTheme.successColor(context)
+                                : AppTheme.errorColor(context),
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
+                );
 
-              return index == 0
-                  ? CustomShowcase(
-                      showcaseKey: TutorialKeys.financeTransactionDeleteKey,
-                      title: 'Manage Transactions',
-                      description:
-                          'Swipe left to delete a transaction, or tap it to view and delete the original note.',
-                      child: dismissibleWidget,
-                    )
-                  : dismissibleWidget;
-            }, childCount: displayedTx.length),
-          ),
-      ],
+                return index == 0
+                    ? CustomShowcase(
+                        showcaseKey: TutorialKeys.financeTransactionDeleteKey,
+                        title: 'Manage Transactions',
+                        description:
+                            'Swipe left to delete a transaction, or tap it to view and delete the original note.',
+                        child: dismissibleWidget,
+                      )
+                    : dismissibleWidget;
+              }, childCount: displayedTx.length),
+            ),
+        ],
+      ),
     );
   }
 
@@ -812,9 +825,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
       sections.add(
         PieChartSectionData(
-          value: amount, 
-          title: '', 
-          color: _selectedCategoryFilter == null || _selectedCategoryFilter == name ? c : c.withOpacity(0.2), 
+          value: amount,
+          title: '',
+          color:
+              _selectedCategoryFilter == null || _selectedCategoryFilter == name
+              ? c
+              : c.withOpacity(0.2),
           radius: _selectedCategoryFilter == name ? 45 : 40,
         ),
       );
@@ -978,7 +994,11 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
             child: Container(
               height: _selectedCategoryFilter == name ? 28 : 24,
               decoration: BoxDecoration(
-                color: _selectedCategoryFilter == null || _selectedCategoryFilter == name ? c : c.withOpacity(0.2), 
+                color:
+                    _selectedCategoryFilter == null ||
+                        _selectedCategoryFilter == name
+                    ? c
+                    : c.withOpacity(0.2),
                 borderRadius: radius,
               ),
             ),
@@ -1103,103 +1123,112 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
     double netBalance = totalInflow - totalOutflow;
 
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: CustomShowcase(
-            showcaseKey: TutorialKeys.splitwiseBalanceKey,
-            title: 'Splitwise Balances',
-            description:
-                'Balance is your net sum. Owed to You is what friends owe you, and You Owe is what you have to pay back.',
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _buildKPICard(
-                      'Balance',
-                      netBalance,
-                      netBalance >= 0
-                          ? AppTheme.successColor(context)
-                          : AppTheme.errorColor(context),
+    return RefreshIndicator(
+      onRefresh: () async {
+        await Provider.of<ApiProvider>(
+          context,
+          listen: false,
+        ).fetchTransactions();
+      },
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: CustomShowcase(
+              showcaseKey: TutorialKeys.splitwiseBalanceKey,
+              title: 'Splitwise Balances',
+              description:
+                  'Balance is your net sum. Owed to You is what friends owe you, and You Owe is what you have to pay back.',
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16.0,
+                  vertical: 8.0,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _buildKPICard(
+                        'Balance',
+                        netBalance,
+                        netBalance >= 0
+                            ? AppTheme.successColor(context)
+                            : AppTheme.errorColor(context),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildKPICard(
-                      'Owed to You',
-                      totalInflow,
-                      AppTheme.successColor(context),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildKPICard(
+                        'Owed to You',
+                        totalInflow,
+                        AppTheme.successColor(context),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: _buildKPICard(
-                      'You Owe',
-                      totalOutflow,
-                      AppTheme.errorColor(context),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: _buildKPICard(
+                        'You Owe',
+                        totalOutflow,
+                        AppTheme.errorColor(context),
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: CustomShowcase(
-            showcaseKey: TutorialKeys.splitwiseChartKey,
-            title: 'Splitwise Visualizer',
-            description:
-                'This chart visually compares your net balances with each of your friends.',
-            child: Container(
-              height: 220,
-              margin: const EdgeInsets.all(16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onSurface.withOpacity(0.1),
+                  ],
                 ),
               ),
-              child: _buildSplitwiseBarChart(personBalances),
             ),
           ),
-        ),
-        const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'Friends & Balances',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          SliverToBoxAdapter(
+            child: CustomShowcase(
+              showcaseKey: TutorialKeys.splitwiseChartKey,
+              title: 'Splitwise Visualizer',
+              description:
+                  'This chart visually compares your net balances with each of your friends.',
+              child: Container(
+                height: 220,
+                margin: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.1),
+                  ),
+                ),
+                child: _buildSplitwiseBarChart(personBalances),
+              ),
             ),
           ),
-        ),
-        if (personBalances.isEmpty)
-          const SliverFillRemaining(
-            child: Center(child: Text('No splitwise transactions recorded.')),
-          )
-        else
-          SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              String person = personBalances.keys.elementAt(index);
-              double balance = personBalances[person]!;
-              List<dynamic> history = personHistory[person] ?? [];
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                'Friends & Balances',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          if (personBalances.isEmpty)
+            const SliverFillRemaining(
+              child: Center(child: Text('No splitwise transactions recorded.')),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate((context, index) {
+                String person = personBalances.keys.elementAt(index);
+                double balance = personBalances[person]!;
+                List<dynamic> history = personHistory[person] ?? [];
 
-              return _buildPersonExpandableCard(
-                person,
-                balance,
-                history,
-                isFirstPerson: index == 0,
-              );
-            }, childCount: personBalances.length),
-          ),
-      ],
+                return _buildPersonExpandableCard(
+                  person,
+                  balance,
+                  history,
+                  isFirstPerson: index == 0,
+                );
+              }, childCount: personBalances.length),
+            ),
+        ],
+      ),
     );
   }
 
