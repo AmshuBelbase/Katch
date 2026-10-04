@@ -88,7 +88,22 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 dueLocal.day == _selectedDate!.day;
           }
 
-          int activeRepeatingCount = api.reminders.where((r) {
+          List<dynamic> sourceReminders = List.from(api.reminders);
+          if (sourceReminders.isEmpty && api.isTutorialActive) {
+            sourceReminders.add({
+              'id': 'dummy',
+              'task_name': 'Sample Task',
+              'due_datetime': DateTime.now()
+                  .toUtc()
+                  .add(const Duration(hours: 2))
+                  .toIso8601String(),
+              'is_completed': false,
+              'recurrence_rule': null,
+              'status': 'both',
+            });
+          }
+
+          int activeRepeatingCount = sourceReminders.where((r) {
             if (r['is_completed'] == true) return false;
             if (r['recurrence_rule'] == null) return false;
             DateTime dueUtc = DateTime.parse(r['due_datetime']);
@@ -96,7 +111,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
             return isSameDay(dueUtc);
           }).length;
 
-          int activeOneOffCount = api.reminders.where((r) {
+          int activeOneOffCount = sourceReminders.where((r) {
             if (r['is_completed'] == true) return false;
             if (r['recurrence_rule'] != null) return false;
             DateTime dueUtc = DateTime.parse(r['due_datetime']);
@@ -106,7 +121,8 @@ class _RemindersScreenState extends State<RemindersScreen> {
 
           bool showTabs =
               activeRepeatingCount > 0 ||
-              activeOneOffCount > 0; // Show tabs if there's anything to filter
+              activeOneOffCount > 0 ||
+              api.isTutorialActive;
 
           int effectiveMode = _currentMode;
           if (activeOneOffCount == 0 &&
@@ -127,7 +143,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
             });
           }
 
-          List<dynamic> displayReminders = List.from(api.reminders);
+          List<dynamic> displayReminders = List.from(sourceReminders);
           if (showTabs) {
             displayReminders = displayReminders
                 .where(
@@ -136,20 +152,6 @@ class _RemindersScreenState extends State<RemindersScreen> {
                       : r['recurrence_rule'] != null,
                 )
                 .toList();
-          }
-
-          if (displayReminders.isEmpty && api.isTutorialActive) {
-            displayReminders.add({
-              'id': 'dummy',
-              'task_name': 'Sample Task',
-              'due_datetime': DateTime.now()
-                  .toUtc()
-                  .add(const Duration(hours: 2))
-                  .toIso8601String(),
-              'is_completed': false,
-              'recurrence_rule': 'FREQ=DAILY',
-              'status': 'both',
-            });
           }
 
           final nowUtc = DateTime.now().toUtc();
@@ -280,27 +282,34 @@ class _RemindersScreenState extends State<RemindersScreen> {
                               ),
                               child: SizedBox(
                                 width: double.infinity,
-                                child: SegmentedButton<int>(
-                                  segments: [
-                                    ButtonSegment(
-                                      value: 0,
-                                      label: Text(
-                                        'One-Off ($activeOneOffCount)',
+                                child: CustomShowcase(
+                                  showcaseKey: TutorialKeys.reminderTabsKey,
+                                  title: 'Task Types',
+                                  description:
+                                      'Switch between One-Off and Repeating tasks to manage your schedule better.',
+                                  child: SegmentedButton<int>(
+                                    segments: [
+                                      ButtonSegment(
+                                        value: 0,
+                                        label: Text(
+                                          'One-Off ($activeOneOffCount)',
+                                        ),
                                       ),
-                                    ),
-                                    ButtonSegment(
-                                      value: 1,
-                                      label: Text(
-                                        'Repeating ($activeRepeatingCount)',
+                                      ButtonSegment(
+                                        value: 1,
+                                        label: Text(
+                                          'Repeating ($activeRepeatingCount)',
+                                        ),
                                       ),
-                                    ),
-                                  ],
-                                  selected: {effectiveMode},
-                                  onSelectionChanged: (Set<int> newSelection) {
-                                    setState(() {
-                                      _currentMode = newSelection.first;
-                                    });
-                                  },
+                                    ],
+                                    selected: {effectiveMode},
+                                    onSelectionChanged:
+                                        (Set<int> newSelection) {
+                                          setState(() {
+                                            _currentMode = newSelection.first;
+                                          });
+                                        },
+                                  ),
                                 ),
                               ),
                             ),

@@ -157,20 +157,26 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                 ),
                 child: Consumer<ApiProvider>(
                   builder: (context, api, child) {
-                    return Row(
-                      children: [
-                        _buildFilterChip('Last 7 Days', api),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('This Month', api),
-                        const SizedBox(width: 8),
-                        _buildFilterChip(
-                          'Select Month',
-                          api,
-                          isSelectMonth: true,
-                        ),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('All Time', api),
-                      ],
+                    return CustomShowcase(
+                      showcaseKey: TutorialKeys.noteTimeFilterKey,
+                      title: 'Time Filters',
+                      description:
+                          'Easily filter your notes by timeframe. Select a specific month or just see recent ones.',
+                      child: Row(
+                        children: [
+                          _buildFilterChip('Last 7 Days', api),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('This Month', api),
+                          const SizedBox(width: 8),
+                          _buildFilterChip(
+                            'Select Month',
+                            api,
+                            isSelectMonth: true,
+                          ),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('All Time', api),
+                        ],
+                      ),
                     );
                   },
                 ),
@@ -181,111 +187,124 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   horizontal: 16,
                   vertical: 4,
                 ),
-                child: Row(
-                  children: _availableTypeFilters.map((f) {
-                    final isSelected = _typeFilters.contains(f);
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: FilterChip(
-                        label: Builder(
-                          builder: (ctx) {
-                            String labelText = f;
-                            if (isSelected) {
-                              final api = Provider.of<ApiProvider>(ctx);
-                              int count = api.memories.where((m) {
-                                if (_searchController.text.isNotEmpty) {
-                                  if (!(m['raw_text'] ?? '')
-                                      .toLowerCase()
-                                      .contains(
-                                        _searchController.text.toLowerCase(),
-                                      ))
-                                    return false;
-                                }
-                                final now = DateTime.now();
-                                if (m['created_at'] == null) return false;
-                                DateTime createdAt = DateTime.parse(
-                                  m['created_at'],
-                                ).toLocal();
-                                if (_timeFilter == 'Last 7 Days') {
-                                  final today = DateTime(
-                                    now.year,
-                                    now.month,
-                                    now.day,
-                                  );
-                                  final createdDate = DateTime(
-                                    createdAt.year,
-                                    createdAt.month,
-                                    createdAt.day,
-                                  );
-                                  final difference = today
-                                      .difference(createdDate)
-                                      .inDays;
-                                  if (difference < 0 || difference >= 7)
-                                    return false;
-                                } else if (_timeFilter == 'This Month') {
-                                  if (createdAt.year != now.year ||
-                                      createdAt.month != now.month)
-                                    return false;
-                                } else if (_timeFilter == 'Select Month' &&
-                                    _selectedDate != null) {
-                                  if (createdAt.year != _selectedDate!.year ||
-                                      createdAt.month != _selectedDate!.month)
-                                    return false;
-                                }
+                child: CustomShowcase(
+                  showcaseKey: TutorialKeys.noteTypeFilterKey,
+                  title: 'Type Filters',
+                  description:
+                      'Filter notes by their content. Easily find notes with extracted tasks or transactions.',
+                  child: Row(
+                    children: _availableTypeFilters.map((f) {
+                      final isSelected = _typeFilters.contains(f);
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: FilterChip(
+                          label: Builder(
+                            builder: (ctx) {
+                              String labelText = f;
+                              if (isSelected) {
+                                final api = Provider.of<ApiProvider>(ctx);
+                                int count = api.memories.where((m) {
+                                  if (_searchController.text.isNotEmpty) {
+                                    if (!(m['raw_text'] ?? '')
+                                        .toLowerCase()
+                                        .contains(
+                                          _searchController.text.toLowerCase(),
+                                        ))
+                                      return false;
+                                  }
+                                  final now = DateTime.now();
+                                  if (m['created_at'] == null) return false;
+                                  DateTime createdAt = DateTime.parse(
+                                    m['created_at'],
+                                  ).toLocal();
+                                  if (_timeFilter == 'Last 7 Days') {
+                                    final today = DateTime(
+                                      now.year,
+                                      now.month,
+                                      now.day,
+                                    );
+                                    final createdDate = DateTime(
+                                      createdAt.year,
+                                      createdAt.month,
+                                      createdAt.day,
+                                    );
+                                    final difference = today
+                                        .difference(createdDate)
+                                        .inDays;
+                                    if (difference < 0 || difference >= 7)
+                                      return false;
+                                  } else if (_timeFilter == 'This Month') {
+                                    if (createdAt.year != now.year ||
+                                        createdAt.month != now.month)
+                                      return false;
+                                  } else if (_timeFilter == 'Select Month' &&
+                                      _selectedDate != null) {
+                                    if (createdAt.year != _selectedDate!.year ||
+                                        createdAt.month != _selectedDate!.month)
+                                      return false;
+                                  }
 
-                                bool matches = true;
-                                if (_typeFilters.contains('Audio') &&
-                                    (m['source'] ?? '').toLowerCase() !=
-                                        'audio')
-                                  matches = false;
-                                if (_typeFilters.contains('Text') &&
-                                    (m['source'] ?? '').toLowerCase() != 'text')
-                                  matches = false;
-                                if (_typeFilters.contains('Starred') &&
-                                    m['is_starred'] != true)
-                                  matches = false;
-                                if (_typeFilters.contains('Has Transaction')) {
-                                  if (!api.transactions.any(
-                                    (t) => t['memory_id'] == m['id'].toString(),
-                                  ))
+                                  bool matches = true;
+                                  if (_typeFilters.contains('Audio') &&
+                                      (m['source'] ?? '').toLowerCase() !=
+                                          'audio')
                                     matches = false;
-                                }
-                                if (_typeFilters.contains('Has Reminder')) {
-                                  if (!api.reminders.any(
-                                    (r) => r['memory_id'] == m['id'].toString(),
-                                  ))
+                                  if (_typeFilters.contains('Text') &&
+                                      (m['source'] ?? '').toLowerCase() !=
+                                          'text')
                                     matches = false;
-                                }
-                                return matches;
-                              }).length;
-                              labelText = '$f ($count)';
-                            }
-                            return Text(labelText);
+                                  if (_typeFilters.contains('Starred') &&
+                                      m['is_starred'] != true)
+                                    matches = false;
+                                  if (_typeFilters.contains(
+                                    'Has Transaction',
+                                  )) {
+                                    if (!api.transactions.any(
+                                      (t) =>
+                                          t['memory_id'] == m['id'].toString(),
+                                    ))
+                                      matches = false;
+                                  }
+                                  if (_typeFilters.contains('Has Reminder')) {
+                                    if (!api.reminders.any(
+                                      (r) =>
+                                          r['memory_id'] == m['id'].toString(),
+                                    ))
+                                      matches = false;
+                                  }
+                                  return matches;
+                                }).length;
+                                labelText = '$f ($count)';
+                              }
+                              return Text(labelText);
+                            },
+                          ),
+                          selected: isSelected,
+                          onSelected: (bool selected) {
+                            setState(() {
+                              if (selected) {
+                                _typeFilters.add(f);
+                              } else {
+                                _typeFilters.remove(f);
+                              }
+                            });
                           },
+                          selectedColor: Theme.of(context).colorScheme.primary,
+                          checkmarkColor: Theme.of(
+                            context,
+                          ).colorScheme.onPrimary,
+                          labelStyle: TextStyle(
+                            color: isSelected
+                                ? Theme.of(context).colorScheme.onPrimary
+                                : Theme.of(context).colorScheme.onBackground,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
                         ),
-                        selected: isSelected,
-                        onSelected: (bool selected) {
-                          setState(() {
-                            if (selected) {
-                              _typeFilters.add(f);
-                            } else {
-                              _typeFilters.remove(f);
-                            }
-                          });
-                        },
-                        selectedColor: Theme.of(context).colorScheme.primary,
-                        checkmarkColor: Theme.of(context).colorScheme.onPrimary,
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? Theme.of(context).colorScheme.onPrimary
-                              : Theme.of(context).colorScheme.onBackground,
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
             ],

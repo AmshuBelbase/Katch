@@ -739,9 +739,15 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Expense Breakdown',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              CustomShowcase(
+                showcaseKey: TutorialKeys.financeCategoryFilterKey,
+                title: 'Category Filters',
+                description:
+                    'Tap on any category in the chart or legend to filter the transaction list below. Tap again to clear.',
+                child: const Text(
+                  'Expense Breakdown',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
               ),
               CustomShowcase(
                 showcaseKey: TutorialKeys.financeChartToggleKey,
@@ -1492,6 +1498,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             context,
                             listen: false,
                           );
+                          api.setTutorialActive(false); // REMOVE DUMMY DATA!
                           api.fetchMemories();
                           api.fetchTransactions();
                           api.fetchReminders();

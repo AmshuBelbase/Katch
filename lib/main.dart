@@ -25,6 +25,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:showcaseview/showcaseview.dart';
 import 'tutorial_keys.dart';
 import 'services/audit_service.dart';
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
@@ -38,10 +39,10 @@ void callbackDispatcher() {
       final prefs = await SharedPreferences.getInstance();
       final remindersJson = prefs.getString('saved_reminders') ?? '[]';
       final List<dynamic> reminders = json.decode(remindersJson);
-      
+
       final txJson = prefs.getString('saved_transactions') ?? '[]';
       final List<dynamic> transactions = json.decode(txJson);
-      
+
       await WidgetSyncHelper.syncWidgets(reminders, transactions);
     } catch (e) {
       print("Background widget sync error: $e");
@@ -52,19 +53,14 @@ void callbackDispatcher() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Alarm package
   await Alarm.init();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-  Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: false,
-  );
+  Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
   Workmanager().registerPeriodicTask(
     "widget-sync-task",
     "widgetSync",
@@ -87,8 +83,6 @@ void main() async {
   );
 }
 
-
-
 class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
@@ -102,7 +96,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
     super.initState();
     Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (mounted) {
-        if (data.event == AuthChangeEvent.signedIn || data.event == AuthChangeEvent.initialSession) {
+        if (data.event == AuthChangeEvent.signedIn ||
+            data.event == AuthChangeEvent.initialSession) {
           final session = Supabase.instance.client.auth.currentSession;
           if (session != null) {
             final api = Provider.of<ApiProvider>(context, listen: false);
@@ -127,12 +122,14 @@ class _AuthWrapperState extends State<AuthWrapper> {
     }
     return ShowCaseWidget(
       onFinish: () async {
-        if (mounted) Provider.of<ApiProvider>(context, listen: false).setTutorialActive(false);
+        if (mounted)
+          Provider.of<ApiProvider>(
+            context,
+            listen: false,
+          ).setTutorialActive(false);
         final packageInfo = await PackageInfo.fromPlatform();
         await Supabase.instance.client.auth.updateUser(
-          UserAttributes(data: {
-            'last_seen_app_version': packageInfo.version,
-          }),
+          UserAttributes(data: {'last_seen_app_version': packageInfo.version}),
         );
       },
       builder: (context) => DashboardShell(key: TutorialKeys.dashboardShellKey),
@@ -167,8 +164,10 @@ class DashboardShell extends StatefulWidget {
   State<DashboardShell> createState() => DashboardShellState();
 }
 
-class DashboardShellState extends State<DashboardShell> with WidgetsBindingObserver {
+class DashboardShellState extends State<DashboardShell>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
+  bool _isTutorialTransitioning = false;
 
   @override
   void dispose() {
@@ -189,36 +188,55 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
 
   String _getScreenName(int index) {
     switch (index) {
-      case 0: return 'Add';
-      case 1: return 'Notes';
-      case 2: return 'AI Chat';
-      case 3: return 'Reminders';
-      case 4: return 'Finance';
-      default: return 'Unknown';
+      case 0:
+        return 'Add';
+      case 1:
+        return 'Notes';
+      case 2:
+        return 'AI Chat';
+      case 3:
+        return 'Reminders';
+      case 4:
+        return 'Finance';
+      default:
+        return 'Unknown';
     }
   }
 
   void switchTab(int index) {
     if (_currentIndex != index) {
-      AuditService().logScreenSwitch(_getScreenName(_currentIndex), _getScreenName(index));
+      AuditService().logScreenSwitch(
+        _getScreenName(_currentIndex),
+        _getScreenName(index),
+      );
     }
     setState(() => _currentIndex = index);
   }
 
   void continueTutorialToNotes() {
+    setState(() => _isTutorialTransitioning = true);
     switchTab(1);
-    Future.delayed(const Duration(milliseconds: 500), _startNotesTutorialWhenReady);
+    Future.delayed(
+      const Duration(milliseconds: 500),
+      _startNotesTutorialWhenReady,
+    );
   }
 
   void _startNotesTutorialWhenReady() {
     if (!mounted) return;
     final api = Provider.of<ApiProvider>(context, listen: false);
     if (api.isLoading) {
-      Future.delayed(const Duration(milliseconds: 500), _startNotesTutorialWhenReady);
+      Future.delayed(
+        const Duration(milliseconds: 500),
+        _startNotesTutorialWhenReady,
+      );
     } else {
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
+          setState(() => _isTutorialTransitioning = false);
           ShowCaseWidget.of(context).startShowCase([
+            TutorialKeys.noteTimeFilterKey,
+            TutorialKeys.noteTypeFilterKey,
             TutorialKeys.noteCardKey,
             TutorialKeys.noteChartKey,
           ]);
@@ -228,18 +246,26 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
   }
 
   void continueTutorialToChat() {
+    setState(() => _isTutorialTransitioning = true);
     switchTab(2);
-    Future.delayed(const Duration(milliseconds: 500), _startChatTutorialWhenReady);
+    Future.delayed(
+      const Duration(milliseconds: 500),
+      _startChatTutorialWhenReady,
+    );
   }
 
   void _startChatTutorialWhenReady() {
     if (!mounted) return;
     final api = Provider.of<ApiProvider>(context, listen: false);
     if (api.isLoading) {
-      Future.delayed(const Duration(milliseconds: 500), _startChatTutorialWhenReady);
+      Future.delayed(
+        const Duration(milliseconds: 500),
+        _startChatTutorialWhenReady,
+      );
     } else {
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
+          setState(() => _isTutorialTransitioning = false);
           ShowCaseWidget.of(context).startShowCase([
             TutorialKeys.chatLimitKey,
             TutorialKeys.chatPromptsKey,
@@ -251,19 +277,28 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
   }
 
   void continueTutorialToReminders() {
+    setState(() => _isTutorialTransitioning = true);
     switchTab(3);
-    Future.delayed(const Duration(milliseconds: 500), _startRemindersTutorialWhenReady);
+    Future.delayed(
+      const Duration(milliseconds: 500),
+      _startRemindersTutorialWhenReady,
+    );
   }
 
   void _startRemindersTutorialWhenReady() {
     if (!mounted) return;
     final api = Provider.of<ApiProvider>(context, listen: false);
     if (api.isLoading) {
-      Future.delayed(const Duration(milliseconds: 500), _startRemindersTutorialWhenReady);
+      Future.delayed(
+        const Duration(milliseconds: 500),
+        _startRemindersTutorialWhenReady,
+      );
     } else {
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
+          setState(() => _isTutorialTransitioning = false);
           ShowCaseWidget.of(context).startShowCase([
+            TutorialKeys.reminderTabsKey,
             TutorialKeys.reminderCardKey,
             TutorialKeys.reminderCheckboxKey,
             TutorialKeys.reminderAlarmIconKey,
@@ -274,19 +309,28 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
   }
 
   void continueTutorialToFinance() {
+    setState(() => _isTutorialTransitioning = true);
     switchTab(4);
-    Future.delayed(const Duration(milliseconds: 500), _startFinanceTutorialWhenReady);
+    Future.delayed(
+      const Duration(milliseconds: 500),
+      _startFinanceTutorialWhenReady,
+    );
   }
 
   void _startFinanceTutorialWhenReady() {
     if (!mounted) return;
     final api = Provider.of<ApiProvider>(context, listen: false);
     if (api.isLoading) {
-      Future.delayed(const Duration(milliseconds: 500), _startFinanceTutorialWhenReady);
+      Future.delayed(
+        const Duration(milliseconds: 500),
+        _startFinanceTutorialWhenReady,
+      );
     } else {
       Future.delayed(const Duration(milliseconds: 800), () {
         if (mounted) {
+          setState(() => _isTutorialTransitioning = false);
           ShowCaseWidget.of(context).startShowCase([
+            TutorialKeys.financeCategoryFilterKey,
             TutorialKeys.financeCardKey,
             TutorialKeys.financeChartToggleKey,
             TutorialKeys.financeAddKey,
@@ -300,6 +344,7 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
       });
     }
   }
+
   final GlobalKey _addKey = GlobalKey();
   final GlobalKey _notesKey = GlobalKey();
   final GlobalKey _chatKey = GlobalKey();
@@ -315,7 +360,9 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
         showDialog(
           context: context,
           builder: (context) => Dialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
             child: Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
@@ -329,17 +376,29 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.wb_sunny, color: Colors.orangeAccent, size: 48),
+                  const Icon(
+                    Icons.wb_sunny,
+                    color: Colors.orangeAccent,
+                    size: 48,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     message.data['title'] ?? 'Daily Drop',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.deepPurple),
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepPurple,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   Text(
                     message.data['content'] ?? 'Your day is ready!',
-                    style: const TextStyle(fontSize: 16, height: 1.5, color: Colors.black87),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      height: 1.5,
+                      color: Colors.black87,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 24),
@@ -348,11 +407,19 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
                       foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
                     ),
-                    child: const Text("Let's Go!", style: TextStyle(fontSize: 16)),
-                  )
+                    child: const Text(
+                      "Let's Go!",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -369,7 +436,7 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
     _setupFCM();
     _setupAlarmListener();
     _checkOnboarding();
-    
+
     HomeWidget.setAppGroupId('group.com.katch.widget');
     HomeWidget.widgetClicked.listen((Uri? uri) => _loadFromWidget(uri));
     HomeWidget.initiallyLaunchedFromHomeWidget().then(_loadFromWidget);
@@ -408,30 +475,29 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
     final metadata = user?.userMetadata ?? {};
     final hasSeenInitial = metadata['has_seen_initial_onboarding'] ?? false;
     final lastSeenVersion = metadata['last_seen_app_version'] ?? '0.0.0';
-    
+
     final packageInfo = await PackageInfo.fromPlatform();
     final currentVersion = packageInfo.version;
 
     if (!hasSeenInitial) {
       Future.delayed(const Duration(milliseconds: 600), () {
         if (mounted) {
-          ShowCaseWidget.of(context).startShowCase([
-            TutorialKeys.addMicKey,
-            TutorialKeys.addTextKey,
-          ]);
+          ShowCaseWidget.of(
+            context,
+          ).startShowCase([TutorialKeys.addMicKey, TutorialKeys.addTextKey]);
         }
       });
     } else if (_isVersionGreater(currentVersion, lastSeenVersion)) {
       if (_isVersionGreater("1.1.2", lastSeenVersion)) {
-         Future.delayed(const Duration(milliseconds: 600), () {
-           if (mounted) {
-             // ShowCaseWidget.of(context).startShowCase([_financeKey]); // Temporarily disabled
-           }
-         });
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) {
+            // ShowCaseWidget.of(context).startShowCase([_financeKey]); // Temporarily disabled
+          }
+        });
       } else {
-         Supabase.instance.client.auth.updateUser(
-           UserAttributes(data: {'last_seen_app_version': currentVersion}),
-         );
+        Supabase.instance.client.auth.updateUser(
+          UserAttributes(data: {'last_seen_app_version': currentVersion}),
+        );
       }
     }
   }
@@ -445,23 +511,31 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
           context: context,
           builder: (context) => AlertDialog(
             title: const Text("Alarm Ringing!"),
-            content: Text(alarmSettings.notificationSettings.body.isNotEmpty ? alarmSettings.notificationSettings.body : "A scheduled reminder is due!"),
+            content: Text(
+              alarmSettings.notificationSettings.body.isNotEmpty
+                  ? alarmSettings.notificationSettings.body
+                  : "A scheduled reminder is due!",
+            ),
             actions: [
               TextButton(
                 onPressed: () async {
                   await Alarm.stop(alarmSettings.id);
                   Navigator.pop(context);
-                  
+
                   // Find the reminder ID associated with this local alarm ID
-                  final apiProvider = Provider.of<ApiProvider>(context, listen: false);
+                  final apiProvider = Provider.of<ApiProvider>(
+                    context,
+                    listen: false,
+                  );
                   String? reminderId;
                   for (var r in apiProvider.reminders) {
-                    if (r['id'].toString().hashCode.abs() % 100000 == alarmSettings.id) {
+                    if (r['id'].toString().hashCode.abs() % 100000 ==
+                        alarmSettings.id) {
                       reminderId = r['id'];
                       break;
                     }
                   }
-                  
+
                   if (reminderId != null) {
                     // Find the existing status to pass to updateReminderSettings
                     String existingStatus = 'pending';
@@ -471,11 +545,15 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
                         break;
                       }
                     }
-                    await apiProvider.updateReminderSettings(reminderId, true, existingStatus);
+                    await apiProvider.updateReminderSettings(
+                      reminderId,
+                      true,
+                      existingStatus,
+                    );
                   }
                 },
                 child: const Text("Stop Alarm"),
-              )
+              ),
             ],
           ),
         );
@@ -487,45 +565,52 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
     // Request permission (mostly for iOS, but good practice)
     FirebaseMessaging messaging = FirebaseMessaging.instance;
     NotificationSettings settings = await messaging.requestPermission();
-    
+
     // Create Notification Channels for Android
     final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
         FlutterLocalNotificationsPlugin();
 
-    const AndroidNotificationChannel channelFeatures = AndroidNotificationChannel(
-      'channel_features',
-      'Features',
-      description: 'Notifications about new app capabilities and how to use them.',
-      importance: Importance.max,
-    );
+    const AndroidNotificationChannel channelFeatures =
+        AndroidNotificationChannel(
+          'channel_features',
+          'Features',
+          description:
+              'Notifications about new app capabilities and how to use them.',
+          importance: Importance.max,
+        );
 
-    const AndroidNotificationChannel channelUpdates = AndroidNotificationChannel(
-      'channel_updates',
-      'Updates',
-      description: 'General app news, maintenance, and version updates.',
-      importance: Importance.high,
-    );
+    const AndroidNotificationChannel channelUpdates =
+        AndroidNotificationChannel(
+          'channel_updates',
+          'Updates',
+          description: 'General app news, maintenance, and version updates.',
+          importance: Importance.high,
+        );
 
-    const AndroidNotificationChannel channelReminders = AndroidNotificationChannel(
-      'channel_reminders',
-      'Reminders',
-      description: 'Server-side functional alerts and reminders.',
-      importance: Importance.high,
-    );
+    const AndroidNotificationChannel channelReminders =
+        AndroidNotificationChannel(
+          'channel_reminders',
+          'Reminders',
+          description: 'Server-side functional alerts and reminders.',
+          importance: Importance.high,
+        );
 
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channelFeatures);
-    
+
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channelUpdates);
 
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.createNotificationChannel(channelReminders);
 
     // Subscribe to categorized FCM Topics
@@ -539,7 +624,10 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
       String? token = await messaging.getToken();
       if (token != null) {
         if (mounted) {
-          Provider.of<ApiProvider>(context, listen: false).registerFcmToken(token);
+          Provider.of<ApiProvider>(
+            context,
+            listen: false,
+          ).registerFcmToken(token);
         }
       }
     }
@@ -552,7 +640,7 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
     // Foreground messages (silently sync data across devices, but show heads-up for push notifications)
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print("Received foreground message: ${message.messageId}");
-      
+
       if (message.notification != null) {
         flutterLocalNotificationsPlugin.show(
           id: message.hashCode,
@@ -578,7 +666,8 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
     });
 
     // App opened from a notification while TERMINATED (cold start)
-    final RemoteMessage? initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    final RemoteMessage? initialMessage = await FirebaseMessaging.instance
+        .getInitialMessage();
     if (initialMessage != null) {
       // Slight delay to ensure the widget tree is ready
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -597,50 +686,56 @@ class DashboardShellState extends State<DashboardShell> with WidgetsBindingObser
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        switchInCurve: Curves.easeIn,
-        switchOutCurve: Curves.easeOut,
-        child: _screens[_currentIndex],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          if (_currentIndex != index) {
-            AuditService().logScreenSwitch(_getScreenName(_currentIndex), _getScreenName(index));
-          }
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.add_circle_outline),
-            selectedIcon: Icon(Icons.add_circle),
-            label: 'Add',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.view_agenda_outlined),
-            selectedIcon: Icon(Icons.view_agenda),
-            label: 'Notes',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.auto_awesome_outlined),
-            selectedIcon: Icon(Icons.auto_awesome),
-            label: 'AI Chat',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.access_time),
-            selectedIcon: Icon(Icons.access_time_filled),
-            label: 'Reminders',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.account_balance_wallet_outlined),
-            selectedIcon: Icon(Icons.account_balance_wallet),
-            label: 'Finance',
-          ),
-        ],
+    return AbsorbPointer(
+      absorbing: _isTutorialTransitioning,
+      child: Scaffold(
+        body: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          switchInCurve: Curves.easeIn,
+          switchOutCurve: Curves.easeOut,
+          child: _screens[_currentIndex],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) {
+            if (_currentIndex != index) {
+              AuditService().logScreenSwitch(
+                _getScreenName(_currentIndex),
+                _getScreenName(index),
+              );
+            }
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.add_circle_outline),
+              selectedIcon: Icon(Icons.add_circle),
+              label: 'Add',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.view_agenda_outlined),
+              selectedIcon: Icon(Icons.view_agenda),
+              label: 'Notes',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.auto_awesome_outlined),
+              selectedIcon: Icon(Icons.auto_awesome),
+              label: 'AI Chat',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.access_time),
+              selectedIcon: Icon(Icons.access_time_filled),
+              label: 'Reminders',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.account_balance_wallet_outlined),
+              selectedIcon: Icon(Icons.account_balance_wallet),
+              label: 'Finance',
+            ),
+          ],
+        ),
       ),
     );
   }
