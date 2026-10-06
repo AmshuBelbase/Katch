@@ -1,3 +1,13 @@
+What's New in v1.1.8:
+
+• Pull to Refresh: You can now easily refresh your content across the app with a simple pull-down gesture.
+
+• Advanced Search & Date Filters: Finding your memories is now easier with quick time filters (Last 7 Days, This Month, Specific Month, and All Time).
+
+• Dynamic Expense Categories: Transaction categories are now smarter and dynamically synced.
+
+• UI & Experience Polish: Refined the visual display of entities and filters, and resolved minor bugs with the onboarding tutorial.
+
 What's New in v1.1.7:
 
 • Enhanced Finance Insights: Your personal transaction categories now display the exact monetary amount alongside the percentage breakdown, giving you a clearer view of your spending.
