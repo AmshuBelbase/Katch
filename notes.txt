@@ -1,3 +1,13 @@
+What's New in v1.1.9:
+
+• Progressive Notes Loading: Experience instant startup with two-stage sync—your most recent notes and activity chart appear immediately, while older memories load smoothly in the background without freezing the UI.
+
+• Complete Vault & Chronological Ordering: Resolved an issue where notes were sorted alphabetically by ID instead of creation date. All your memories now load in true reverse-chronological order with zero records missed.
+
+• Real-Time Search Enhancements: Search now updates dynamically as older notes finish syncing in the background, accompanied by a subtle sync indicator. Plus, a convenient "Search in All Time" shortcut helps you instantly expand your search if no results match the current month filter.
+
+• Accurate Filter Badges & Counts: Time filter badges (like "This Month" and "All Time") now accurately reflect your exact database record counts in real time.
+
 What's New in v1.1.8:
 
 • Pull to Refresh: You can now easily refresh your content across the app with a simple pull-down gesture.
@@ -17,21 +27,3 @@ What's New in v1.1.7:
 • Improved Foreground Notifications: Upgraded our push notification system to ensure important alerts (like daily drops and feature highlights) reliably show up as heads-up alerts even while you are actively using your phone.
 
 • Under-the-Hood Security & Admin Upgrades: Implemented a robust role-based access system to handle administrative tasks securely without affecting regular users.
-
-What's New in v1.1.6:
-
-• Interactive Home Screen Widgets: Add notes instantly, view upcoming reminders, check personal finances, and review Splitwise balances directly from your Android home screen with beautiful, dynamically-sized widgets.
-
-• Perfected Splitwise Balances: Your personal net balances in the Splitwise tab now accurately net out borrowed and repaid amounts to give you a clean "Owed to You" and "You Owe" summary. Settled debts naturally disappear from the list.
-
-• Smart Background Sync: Your home screen widgets stay seamlessly up to date in the background and intelligently launch straight to the correct app tab when tapped.
-
-What's New in v1.1.5:
-
-• Recurring Reminders Overhaul: Flawless timezone-aware scheduling, strict mathematical next-occurrence calculations to prevent skipped days, and a new split view separating "One-Off" and "Repeating" tasks.
-
-• Advanced Memories Filtering: A completely revamped memories screen featuring cascading multi-select filters (Audio, Text, Starred, Transactions, Reminders) and dynamic time ranges (Recent vs All Time) with live counts.
-
-• Rock-Solid Data Management: Hardened and more reliable deletion logic across the app, ensuring your data is handled safely.
-
-• Responsive UI Improvements: Core app screens have been updated to be fully responsive and adapt gracefully to different screen sizes.

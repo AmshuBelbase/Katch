@@ -16,17 +16,17 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.1.8+19
+version: 1.1.9+20
 
 # flutter build apk --release
-# Rename-Item build\app\outputs\flutter-apk\app-release.apk katch-v1.1.8.apk 
-# gh release create v1.1.8 build\app\outputs\flutter-apk\katch-v1.1.8.apk --title "v1.1.8" -F notes.txt
+# Rename-Item build\app\outputs\flutter-apk\app-release.apk katch-v1.1.9.apk 
+# gh release create v1.1.9 build\app\outputs\flutter-apk\katch-v1.1.9.apk --title "v1.1.9" -F notes.txt
 
 # right now, notes.txt contains Update Screen Message, edit it to show Message of the new update
 
 # last update git hash: 
-# voice_memory_app: 89c74c27b00d006830504f374a9153f7424e72b4
-# memory_backend: 5912af81c13086cd5b382892a018c9d62470d972
+# voice_memory_app: 305b9ad3584966f2612a19131642c3a753411322
+# memory_backend: 5fb94f0f8c6ce4149557421d46cec12b00015e3a
 
 # go through changes made and prepare new message and write on that text file. on same format as of now
 
