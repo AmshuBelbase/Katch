@@ -43,6 +43,8 @@ class ApiProvider extends ChangeNotifier {
   String? error;
 
   List<dynamic> memories = [];
+  int totalMemoriesCount = 0;
+  bool isSyncingOlderMemories = false;
   List<dynamic> reminders = [];
   List<dynamic> transactions = [];
   List<dynamic> chatHistory = [];
@@ -204,6 +206,8 @@ class ApiProvider extends ChangeNotifier {
 
   void clearData() {
     memories.clear();
+    totalMemoriesCount = 0;
+    isSyncingOlderMemories = false;
     reminders.clear();
     transactions.clear();
     chatHistory.clear();
@@ -324,15 +328,58 @@ class ApiProvider extends ChangeNotifier {
 
   Future<void> _fetchMemoriesInternal() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/memories'), headers: _headers);
+      // Stage 1: Fetch recent 40 memories for fast startup / first paint
+      final response = await http.get(
+        Uri.parse('$baseUrl/memories?limit=40&offset=0'),
+        headers: _headers,
+      );
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         memories = data['results'] ?? [];
+        totalMemoriesCount = data['total_count'] ?? memories.length;
+        notifyListeners();
+
+        // Stage 2: If there are more historical memories, fetch them silently in the background
+        if (memories.length < totalMemoriesCount) {
+          _fetchRemainingMemoriesSilently(offset: memories.length);
+        }
       } else {
         error = "Failed to load memories";
       }
     } catch (e) {
       error = e.toString();
+    }
+  }
+
+  Future<void> _fetchRemainingMemoriesSilently({required int offset}) async {
+    if (isSyncingOlderMemories) return;
+    isSyncingOlderMemories = true;
+    notifyListeners();
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/memories?offset=$offset'),
+        headers: _headers,
+      );
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final List<dynamic> olderMemories = data['results'] ?? [];
+
+        final existingIds = memories.map((m) => m['id'].toString()).toSet();
+        for (var item in olderMemories) {
+          if (!existingIds.contains(item['id'].toString())) {
+            memories.add(item);
+            existingIds.add(item['id'].toString());
+          }
+        }
+        totalMemoriesCount = memories.length;
+        notifyListeners();
+      }
+    } catch (e) {
+      print("Silent background sync failed: $e");
+    } finally {
+      isSyncingOlderMemories = false;
+      notifyListeners();
     }
   }
 

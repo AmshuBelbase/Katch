@@ -140,9 +140,28 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   decoration: InputDecoration(
                     hintText: 'Search notes...',
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.clear),
-                      onPressed: () => _searchController.clear(),
+                    suffixIcon: Consumer<ApiProvider>(
+                      builder: (context, api, child) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (api.isSyncingOlderMemories)
+                              const Padding(
+                                padding: EdgeInsets.only(right: 8.0),
+                                child: SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              ),
+                            if (_searchController.text.isNotEmpty)
+                              IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () => _searchController.clear(),
+                              ),
+                          ],
+                        );
+                      },
                     ),
                     contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   ),
@@ -568,17 +587,70 @@ class _MemoriesScreenState extends State<MemoriesScreen> {
                   }).toList();
                 }
 
-                if (displayMemories.isEmpty && api.isTutorialActive) {
-                  displayMemories = [
-                    {
-                      'id': 'dummy',
-                      'created_at': DateTime.now().toIso8601String(),
-                      'source': 'text',
-                      'raw_text':
-                          'This is a sample memory. Our AI automatically extracts tasks and expenses from notes like this!',
-                      'is_starred': false,
-                    },
-                  ];
+                if (displayMemories.isEmpty) {
+                  if (api.isTutorialActive) {
+                    displayMemories = [
+                      {
+                        'id': 'dummy',
+                        'created_at': DateTime.now().toIso8601String(),
+                        'source': 'text',
+                        'raw_text':
+                            'This is a sample memory. Our AI automatically extracts tasks and expenses from notes like this!',
+                        'is_starred': false,
+                      },
+                    ];
+                  } else if (api.isSyncingOlderMemories) {
+                    return const SliverToBoxAdapter(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              ),
+                              SizedBox(height: 12),
+                              Text(
+                                'Checking full history in background...',
+                                style: TextStyle(color: Colors.grey, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  } else if (_searchController.text.isNotEmpty) {
+                    return SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'No matching notes found in "$_timeFilter".',
+                                style: const TextStyle(color: Colors.grey, fontSize: 14),
+                              ),
+                              if (_timeFilter != 'All Time') ...[
+                                const SizedBox(height: 8),
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _timeFilter = 'All Time';
+                                    });
+                                  },
+                                  child: const Text('Search in All Time'),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  }
                 }
 
                 return SliverList(
